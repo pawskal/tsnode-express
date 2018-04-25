@@ -25,7 +25,8 @@
   "homepage": "https://github.com/Pawskal/TSNode#readme",
   "dependencies": {
     "@types/reflect-metadata": "^0.1.0",
-    "express": "^4.16.3"
+    "express": "^4.16.3",
+    "jsonwebtoken": "^8.2.1"
   },
   "devDependencies": {
     "@types/node": "^9.4.7",

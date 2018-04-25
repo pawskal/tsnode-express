@@ -1,4 +1,7 @@
 import Application from './application';
+import { Injector } from './injector';
+
+Injector.getInstance();
 
 const { Service,
         Controller, 
@@ -6,7 +9,7 @@ const { Service,
         Post, 
         Put, 
         Patch, 
-        Delete } = Application;
+        Delete } = Injector;
 
 export { Application,
         Service,
