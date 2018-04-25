@@ -1,0 +1,25 @@
+{
+  "name": "tsnode",
+  "version": "0.0.1",
+  "description": "nodejs express typescript",
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pawskal/TSNode.git"
+  },
+  "keywords": [
+    "node",
+    "js",
+    "typescript",
+    "express"
+  ],
+  "author": "pawskal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Pawskal/TSNode/issues"
+  },
+  "homepage": "https://github.com/Pawskal/TSNode#readme"
+}
