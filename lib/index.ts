@@ -1,6 +1,8 @@
 import Application from './application';
 import { Injector } from './injector';
 
+import * as Interfaces from './interfaces';
+
 Injector.getInstance();
 
 const { Service,
@@ -19,3 +21,4 @@ export { Application,
         Put, 
         Patch, 
         Delete };
+export default Interfaces;

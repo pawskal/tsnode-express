@@ -1,31 +1,6 @@
 import 'reflect-metadata'
 import { UserController } from '../example/modules/user.controller';
-
-interface IController {
-  basePath?: string;
-  routes?: Map<string, IRoutes>;
-}
-
-interface IMethod {
-  name?: string
-  handler?: Function
-}
-
-interface IMethodSet {
-  origin?: IMethod
-}
-
-interface IRoutes {
-  get?: IMethodSet;
-  post?: IMethodSet;
-  put?: IMethodSet;
-  patch?: IMethodSet;
-  delete?: IMethodSet;
-}
-
-interface Type<T> {
-  new(...args: any[]): T;
-}
+import { Type, IController, IRoutes } from './interfaces';
 
 export class Injector  {
   public static getInstance(): Injector {
@@ -77,14 +52,15 @@ export class Injector  {
       })
     }
     const controller: IController = this.controllers.get(target.constructor.name)
-    controller.routes.set(path, { 
+    const route = controller.routes.get(path) || {}
+    controller.routes.set(path, Object.assign(route, { 
       [method]: {
         [type] : {
           name: fname,
           handler: descriptor.value as Function
         }
       }
-    });
+    }));
   }
 
   public static Get = (path: string) : Function =>
@@ -110,5 +86,4 @@ export class Injector  {
   public static Delete = (path: string) : Function =>
     (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
       Injector._instance.defineRoute('delete', 'origin', target, path, fname, descriptor);
-  
 }

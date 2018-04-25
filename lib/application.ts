@@ -2,49 +2,12 @@ import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
 import { Injector } from './injector';
+import { IController, Type } from './interfaces';
 
 // import secret from '../example/secret';
 // import jwt from 'jsonwebtoken';
 
-interface Type<T> {
-  new(...args: any[]): T;
-}
-
-export interface IAuthProvider {
-  verify(data: any): IVerifyResponse;
-}
-export interface IVerifyResponse{
-  verify : boolean,
-  data?: any
-}
-interface IController {
-  instance?: any;
-  basePath?: string;
-  routes?: Map<string, IRoutes>;
-}
-
-interface IMethod {
-  name?: string
-  handler?: Function
-}
-
-interface IMethodSet {
-  origin?: IMethod
-}
-
-interface IRoutes {
-  get?: IMethodSet;
-  post?: IMethodSet;
-  put?: IMethodSet;
-  patch?: IMethodSet;
-  delete?: IMethodSet;
-}
-
 class Application {
-  public static get Instance(): Application {
-    return this._instance || (this._instance = new Application());
-  };
-
   public get Injector(): Injector {
     return this._injector
   }
@@ -53,7 +16,7 @@ class Application {
 
   private static _instance: Application;
 
-  private app: any;
+  private express: any;
 
   private authorizationProvider : any;
 
@@ -68,9 +31,9 @@ class Application {
   private controllers: Map<string, IController> = new Map<string, IController>()
   
   constructor() {
-    this.app = express();
-    this.app.use(bodyParser.json());
-    this.app.use(bodyParser.urlencoded({ extended: false }));
+    this.express = express();
+    this.express.use(bodyParser.json());
+    this.express.use(bodyParser.urlencoded({ extended: false }));
     this._injector = Injector.getInstance();
 
     this.controllers = this._injector.controllers;
@@ -82,7 +45,8 @@ class Application {
     Object.keys(modul).forEach((m) => console.log(m, 'registered'))
   }
 
-  private authMiddleware(req,res,next) : void {
+  private authMiddleware(req, res, next) : void {
+    console.log(req)
     if(this.enableAthorization) {
       // const token = req.headers[this.authorizationOptions.header];
       // // const decoded = jwt.verify(token,secret);
@@ -101,11 +65,9 @@ class Application {
   }
 
   public useAuthorizationProvider<T>(provider: Type<T>, cb:any) {
-
     this.enableAthorization = true;
     this._injector.set(provider);
     this.authorizationProvider = this._injector.resolve<any>(provider.name);
-
     cb(this.authorizationOptions);    
   }
 
@@ -148,24 +110,18 @@ class Application {
 
         console.log(`/${definition.basePath}`,`/${path}`,handler)
 
-        this.authorizationControllers.indexOf(name) ?
-        this.app.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler)) :
-        this.app.use(`/${definition.basePath}`,Router()[method](`/${path}`, handler))            
+        // this.authorizationControllers.indexOf(name) ?
+        // this.express.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler)) :
+        // this.express.use(`/${definition.basePath}`,Router()[method](`/${path}`, handler))            
 
-        this.app.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler))
+        this.express.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler))
       })
     })
   }
 
-  public static configure(cb: Function) {
-    const instance = Application.Instance;
-    cb(instance)
-  }
-
-  public static start(cb: Function) {
-    const instance = Application.Instance;
-    Application._instance.build.call(instance);
-    cb(instance.app);
+  public start(cb: Function) {
+    this.build();
+    cb(this.express);
   }
 }
 
