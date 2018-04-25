@@ -3,12 +3,19 @@ import Router from 'express';
 import bodyParser from 'body-parser';
 import { Injector } from './injector';
 
+import secret from '../example/secret';
+import jwt from 'jsonwebtoken';
+
 interface Type<T> {
   new(...args: any[]): T;
 }
 
-interface IAuthProvider {
-  verify(): any;
+export interface IAuthProvider {
+  verify(data: any): IVerifyResponse;
+}
+export interface IVerifyResponse{
+  verify : boolean,
+  data?: any
 }
 
 class Application {
@@ -31,7 +38,11 @@ class Application {
 
   private authorizationProvider : any;
 
+  private authorizationControllers: any = [];
+
   private enableAthorization: boolean = false;
+
+  private authorizationOptions: any = {};
 
   private dbProvider: any;
   
@@ -47,20 +58,31 @@ class Application {
     // console.log(modul.name)
   }
 
-  private authMiddleware() : void {
+  private authMiddleware(req,res,next) : void {
     if(this.enableAthorization) {
-      // this.authorizationProvider.test(...arguments);
+      const token = req.headers[this.authorizationOptions.header];
+      const decoded = jwt.verify(token,secret);
+      const verifyResult = this.authorizationProvider.verify(decoded);
+      
+      if(verifyResult.verify){
+        req.data = verifyResult.data;
+        next();
+      }
+      else{
+        res.sendStatus(401);
+      }
     } else {
-      arguments[2]();
+      next();
     }
-    // arguments[2]();
   }
 
+  public useAuthorizationProvider<T>(provider: Type<T>, cb:any) {
 
-  public useAuthorizationProvider<T>(provider: Type<T>) {
     this.enableAthorization = true;
     this._injector.set('services', provider);
     this.authorizationProvider = this._injector.resolve<any>(provider.name);
+
+    cb(this.authorizationOptions);    
   }
 
   public async useDBProvider<T>(provider: Type<T>) {
@@ -114,15 +136,17 @@ class Application {
             await after.call(instance, result)
           }
 
-          Application._instance.app.use(`/${basePath}`, Application._instance.authMiddleware.bind(Application._instance), Router()[method](`/${route}`, handler))
+          Application._instance.authorizationControllers.indexOf(target) ?
+          Application._instance.app.use(`/${basePath}`, Application._instance.authMiddleware.bind(Application._instance), Router()[method](`/${route}`, handler)) :
+          Application._instance.app.use(`/${basePath}`,Router()[method](`/${route}`, handler))            
         })
-
       });
     }
   }
 
   public static Authorization (target) : void {
     console.log(target.name, 'need authorization')
+    Application._instance.authorizationControllers.push(target);
   }
 
   public static Service (target) : void {
