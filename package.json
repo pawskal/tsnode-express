@@ -1,18 +1,19 @@
 {
-  "name": "tsnode",
+  "name": "tsnode-express",
   "version": "0.0.1",
   "description": "nodejs express typescript",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "test"
+    "start": "npm run build:live",
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Pawskal/TSNode.git"
   },
   "keywords": [
-    "node",
-    "js",
+    "nodejs",
     "typescript",
     "express"
   ],
@@ -21,5 +22,16 @@
   "bugs": {
     "url": "https://github.com/Pawskal/TSNode/issues"
   },
-  "homepage": "https://github.com/Pawskal/TSNode#readme"
+  "homepage": "https://github.com/Pawskal/TSNode#readme",
+  "dependencies": {
+    "@types/reflect-metadata": "^0.1.0",
+    "express": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^9.4.7",
+    "nodemon": "^1.17.1",
+    "ts-node": "^5.0.1",
+    "typescript": "^2.7.2",
+    "eslint": "^3.17.1"
+  }
 }
