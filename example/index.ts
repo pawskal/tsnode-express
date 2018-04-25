@@ -2,7 +2,13 @@ import http from 'http';
 
 import Application from '../lib/application';
 
-Application.start((express, app) => {
+import * as UserModule from './modules'
+
+Application.configure((app: Application) => {
+  app.registerModule(UserModule);
+})
+
+Application.start((express) => {
   express.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
@@ -14,8 +20,6 @@ Application.start((express, app) => {
   })
 })
 
-// Application.Instance.registerModule(require('./modules/user'));
-// Application.Instance.registerModule(require('./modules/orders'));
 
 
 

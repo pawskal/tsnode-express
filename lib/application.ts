@@ -3,8 +3,8 @@ import Router from 'express';
 import bodyParser from 'body-parser';
 import { Injector } from './injector';
 
-import secret from '../example/secret';
-import jwt from 'jsonwebtoken';
+// import secret from '../example/secret';
+// import jwt from 'jsonwebtoken';
 
 interface Type<T> {
   new(...args: any[]): T;
@@ -17,9 +17,30 @@ export interface IVerifyResponse{
   verify : boolean,
   data?: any
 }
+interface IController {
+  instance?: any;
+  basePath?: string;
+  routes?: Map<string, IRoutes>;
+}
+
+interface IMethod {
+  name?: string
+  handler?: Function
+}
+
+interface IMethodSet {
+  origin?: IMethod
+}
+
+interface IRoutes {
+  get?: IMethodSet;
+  post?: IMethodSet;
+  put?: IMethodSet;
+  patch?: IMethodSet;
+  delete?: IMethodSet;
+}
 
 class Application {
-  
   public static get Instance(): Application {
     return this._instance || (this._instance = new Application());
   };
@@ -32,9 +53,7 @@ class Application {
 
   private static _instance: Application;
 
-  public app: any;
-
-  private routes: any = {};
+  private app: any;
 
   private authorizationProvider : any;
 
@@ -45,32 +64,37 @@ class Application {
   private authorizationOptions: any = {};
 
   private dbProvider: any;
+
+  private controllers: Map<string, IController> = new Map<string, IController>()
   
   constructor() {
     this.app = express();
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({ extended: false }));
-    this._injector = new Injector(this);
+    this._injector = Injector.getInstance();
+
+    this.controllers = this._injector.controllers;
+
     return Application._instance || (Application._instance = this);
   }
 
   registerModule(modul): void {
-    // console.log(modul.name)
+    Object.keys(modul).forEach((m) => console.log(m, 'registered'))
   }
 
   private authMiddleware(req,res,next) : void {
     if(this.enableAthorization) {
-      const token = req.headers[this.authorizationOptions.header];
-      const decoded = jwt.verify(token,secret);
-      const verifyResult = this.authorizationProvider.verify(decoded);
+      // const token = req.headers[this.authorizationOptions.header];
+      // // const decoded = jwt.verify(token,secret);
+      // // const verifyResult = this.authorizationProvider.verify(decoded);
       
-      if(verifyResult.verify){
-        req.data = verifyResult.data;
-        next();
-      }
-      else{
-        res.sendStatus(401);
-      }
+      // if(verifyResult.verify){
+      //   req.data = verifyResult.data;
+      //   next();
+      // }
+      // else{
+      //   res.sendStatus(401);
+      // }
     } else {
       next();
     }
@@ -79,69 +103,19 @@ class Application {
   public useAuthorizationProvider<T>(provider: Type<T>, cb:any) {
 
     this.enableAthorization = true;
-    this._injector.set('services', provider);
+    this._injector.set(provider);
     this.authorizationProvider = this._injector.resolve<any>(provider.name);
 
     cb(this.authorizationOptions);    
   }
 
   public async useDBProvider<T>(provider: Type<T>) {
-    this._injector.set('services', provider);
+    this._injector.set(provider);
     this.dbProvider = this._injector.resolve<any>(provider.name);
   }
 
-  private defineRoute(method, target, path, fname, descriptor) : void {
-    // console.log('difine route', method, path, target.name)
-    
-    const controller = this.routes[target.constructor.name] ?
-                       this.routes[target.constructor.name] : 
-                       this.routes[target.constructor.name] = {};
-
-
-    const tpath = controller[path] ? controller[path] : controller[path] = {};
-    
-    const met = tpath[method] ? tpath[method] : tpath[method] = {};
-
-    met.origin = {
-      name: fname,
-      value: descriptor.value,
-    }
-  }
-
-  public static Controller(basePath) : Function {
-    return (target) : void => {
-    // console.log('difine controller', target.name)
-      Application._instance.Injector.set('services', target);
-      const instance = Application._instance.Injector.resolve<any>(target.name);
-      Object.keys(Application._instance.routes[target.name]).forEach(route => {
-        // console.log(route, 'route')
-        Object.keys(Application._instance.routes[target.name][route]).forEach((method) => {
-          // console.log(method, 'method')
-          async function handler(req, res, next) {
-            const stub = () => console.log('stub');
-
-            const afterStub = (result) => {
-              res.json({data: result})
-            }
-
-            const before = Application._instance.routes[target.name][route][method]['before'] || stub;
-            const origin = Application._instance.routes[target.name][route][method]['origin'].value || stub; 
-            const after = Application._instance.routes[target.name][route][method]['after'] || afterStub; 
-            
-            console.log('before')
-            await before.call(instance, {req, res, next})
-            console.log('origin')
-            const result = await origin.apply(instance, arguments)
-            console.log('after')
-            await after.call(instance, result)
-          }
-
-          Application._instance.authorizationControllers.indexOf(target) ?
-          Application._instance.app.use(`/${basePath}`, Application._instance.authMiddleware.bind(Application._instance), Router()[method](`/${route}`, handler)) :
-          Application._instance.app.use(`/${basePath}`,Router()[method](`/${route}`, handler))            
-        })
-      });
-    }
+  private build() {
+    this.controllers.forEach(this.buildController.bind(this))
   }
 
   public static Authorization (target) : void {
@@ -149,41 +123,49 @@ class Application {
     Application._instance.authorizationControllers.push(target);
   }
 
-  public static Service (target) : void {
-    Application._instance.Injector.set('services', target);
+  private buildController(definition: IController, name) {
+    definition.instance = Application._instance.Injector.resolve<any>(name);
+    definition.routes.forEach((routes, path) => {
+      Object.keys(routes).forEach((method) => {
+        async function handler(req, res, next) {
+          const stub = () => console.log('stub');
+
+          const afterStub = (result) => {
+            res.json({data: result})
+          }
+
+          const before = routes[method]['before'] || stub;
+          const origin = routes[method]['origin'].handler || stub; 
+          const after = routes[method]['after'] || afterStub; 
+          
+          console.log('before')
+          await before.call(definition.instance, {req, res, next})
+          console.log('origin')
+          const result = await origin.apply(definition.instance, arguments)
+          console.log('after')
+          await after.call(definition.instance, result)
+        }
+
+        console.log(`/${definition.basePath}`,`/${path}`,handler)
+
+        this.authorizationControllers.indexOf(name) ?
+        this.app.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler)) :
+        this.app.use(`/${definition.basePath}`,Router()[method](`/${path}`, handler))            
+
+        this.app.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler))
+      })
+    })
   }
 
-  public static Get  = (path) : Function => (target, fname, descriptor) : void => {
-    Application._instance.defineRoute('get', target, path, fname, descriptor);
+  public static configure(cb: Function) {
+    const instance = Application.Instance;
+    cb(instance)
   }
 
-  public static Post = (path) : Function => (target, fname, descriptor) : void => {
-    Application._instance.defineRoute('post', target, path, fname, descriptor);
-  }
-
-  public static Put = (path) : Function => (target, fname, descriptor) : void => {
-    Application._instance.defineRoute('patch', target, path, fname, descriptor);
-  }
-
-  public static Patch = (path) : Function => (target, fname, descriptor) : void => {
-    Application._instance.defineRoute('patch', target, path, fname, descriptor);
-  }
-
-  public static Delete = (path) : Function => (target, fname, descriptor) : void => {
-    Application._instance.defineRoute('delete', target, path, fname, descriptor);
-  }
-
-  private build() {
-
-  }
-
-  public static configure(cb){
-    cb(Application._instance);
-  } 
-
-  public static start(cb) {
-    Application._instance.build.call(Application._instance);
-    cb(Application._instance.app);
+  public static start(cb: Function) {
+    const instance = Application.Instance;
+    Application._instance.build.call(instance);
+    cb(instance.app);
   }
 }
 
