@@ -40,7 +40,7 @@ class Application {
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({ extended: false }));
     this._injector = new Injector(this);
-    Application._instance = this;
+    return Application._instance || (Application._instance = this);
   }
 
   registerModule(modul): void {
@@ -71,9 +71,9 @@ class Application {
   private defineRoute(method, target, path, fname, descriptor) : void {
     // console.log('difine route', method, path, target.name)
     
-    const controller = Application._instance.routes[target.constructor.name] ?
-                       Application._instance.routes[target.constructor.name] : 
-                       Application._instance.routes[target.constructor.name] = {};
+    const controller = this.routes[target.constructor.name] ?
+                       this.routes[target.constructor.name] : 
+                       this.routes[target.constructor.name] = {};
 
 
     const tpath = controller[path] ? controller[path] : controller[path] = {};
@@ -147,6 +147,19 @@ class Application {
 
   public static Delete = (path) : Function => (target, fname, descriptor) : void => {
     Application._instance.defineRoute('delete', target, path, fname, descriptor);
+  }
+
+  private build() {
+
+  }
+
+  public static configure(cb){
+    cb(Application._instance);
+  } 
+
+  public static start(cb) {
+    Application._instance.build.call(Application._instance);
+    cb(Application._instance.app);
   }
 }
 
