@@ -6,7 +6,8 @@ import * as Interfaces from './interfaces';
 Injector.getInstance();
 
 const { Service,
-        Controller, 
+        Controller,
+        Authorization,
         Get, 
         Post, 
         Put, 
@@ -15,10 +16,12 @@ const { Service,
 
 export { Application,
         Service,
-        Controller, 
+        Controller,
+        Authorization,
         Get, 
         Post, 
         Put, 
         Patch, 
         Delete };
+
 export default Interfaces;

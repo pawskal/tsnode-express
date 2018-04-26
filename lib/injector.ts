@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { UserController } from '../example/modules/user.controller';
-import { Type, IController, IRoutes } from './interfaces';
+import { Type, IController, IRoutes, IAuthOption } from './interfaces';
 
 export class Injector  {
   public static getInstance(): Injector {
@@ -38,14 +38,17 @@ export class Injector  {
   }
 
   public static Authorization (target) : void {
-    console.log(target.name, 'need authorization')
+    const controler: IController = Injector._instance.controllers.get('UserController')
+    controler.auth = true
+    console.log(Injector._instance.controllers.get('UserController'), 'need authorization')
   }
 
   public static Service (target) : void {
     Injector._instance.set(target);
   }
 
-  private defineRoute(method: string, type: string, target: Type<any>, path: string, fname: string, descriptor: PropertyDescriptor) : void {
+  private defineRoute(method: string, type: string, target: Type<any>,
+                      path: string, fname: string, descriptor: PropertyDescriptor, authOption?: IAuthOption) : void {
     if(!this.controllers.has(target.constructor.name)) {
       this.controllers.set(target.constructor.name, {
         routes: new Map<string, IRoutes>()
@@ -55,6 +58,7 @@ export class Injector  {
     const route = controller.routes.get(path) || {}
     controller.routes.set(path, Object.assign(route, { 
       [method]: {
+        auth: authOption && authOption.auth,
         [type] : {
           name: fname,
           handler: descriptor.value as Function
@@ -63,27 +67,27 @@ export class Injector  {
     }));
   }
 
-  public static Get = (path: string) : Function =>
+  public static Get = (path: string, authOption?: IAuthOption) : Function =>
     (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => {
-      Injector._instance.defineRoute('get', 'origin', target, path, fname, descriptor);
+      Injector._instance.defineRoute('get', 'origin', target, path, fname, descriptor, authOption);
   }
 
-  public static Post = (path: string) : Function =>
+  public static Post = (path: string, authOption?: IAuthOption) : Function =>
     (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-      Injector._instance.defineRoute('post', 'origin', target, path, fname, descriptor);
+      Injector._instance.defineRoute('post', 'origin', target, path, fname, descriptor, authOption);
   
 
-  public static Put = (path: string) : Function =>
+  public static Put = (path: string, authOption?: IAuthOption) : Function =>
     (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-      Injector._instance.defineRoute('patch', 'origin', target, path, fname, descriptor);
+      Injector._instance.defineRoute('patch', 'origin', target, path, fname, descriptor, authOption);
   
 
-  public static Patch = (path: string) : Function =>
+  public static Patch = (path: string, authOption?: IAuthOption) : Function =>
     (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-      Injector._instance.defineRoute('patch', 'origin', target, path, fname, descriptor);
+      Injector._instance.defineRoute('patch', 'origin', target, path, fname, descriptor, authOption);
   
 
-  public static Delete = (path: string) : Function =>
+  public static Delete = (path: string, authOption?: IAuthOption) : Function =>
     (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-      Injector._instance.defineRoute('delete', 'origin', target, path, fname, descriptor);
+      Injector._instance.defineRoute('delete', 'origin', target, path, fname, descriptor, authOption);
 }

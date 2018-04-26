@@ -41,13 +41,13 @@ class Application {
     return Application._instance || (Application._instance = this);
   }
 
-  registerModule(modul): void {
+  public registerModule(modul): void {
     Object.keys(modul).forEach((m) => console.log(m, 'registered'))
   }
 
   private authMiddleware(req, res, next) : void {
-    console.log(req)
     if(this.enableAthorization) {
+      
       // const token = req.headers[this.authorizationOptions.header];
       // // const decoded = jwt.verify(token,secret);
       // // const verifyResult = this.authorizationProvider.verify(decoded);
@@ -76,13 +76,10 @@ class Application {
     this.dbProvider = this._injector.resolve<any>(provider.name);
   }
 
+  
+
   private build() {
     this.controllers.forEach(this.buildController.bind(this))
-  }
-
-  public static Authorization (target) : void {
-    console.log(target.name, 'need authorization')
-    Application._instance.authorizationControllers.push(target);
   }
 
   private buildController(definition: IController, name) {
@@ -92,29 +89,25 @@ class Application {
         async function handler(req, res, next) {
           const stub = () => console.log('stub');
 
-          const afterStub = (result) => {
-            res.json({data: result})
-          }
-
           const before = routes[method]['before'] || stub;
           const origin = routes[method]['origin'].handler || stub; 
-          const after = routes[method]['after'] || afterStub; 
-          
-          console.log('before')
-          await before.call(definition.instance, {req, res, next})
-          console.log('origin')
-          const result = await origin.apply(definition.instance, arguments)
-          console.log('after')
-          await after.call(definition.instance, result)
+          const after = routes[method]['after'] || stub; 
+
+          await before.apply(definition.instance, arguments)
+
+          req.result = await origin.apply(definition.instance, arguments)
+
+          await after.apply(definition.instance, arguments)
+          res.send(req.result)
         }
 
-        console.log(`/${definition.basePath}`,`/${path}`,handler)
+        console.log(`/${definition.basePath}/${path}`, 'registered')
 
-        // this.authorizationControllers.indexOf(name) ?
-        // this.express.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler)) :
-        // this.express.use(`/${definition.basePath}`,Router()[method](`/${path}`, handler))            
+        let authRequired = routes[method].auth === false ? false : definition.auth;
 
-        this.express.use(`/${definition.basePath}`, this.authMiddleware.bind(this), Router()[method](`/${path}`, handler))
+        const authMiddleware = false ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
+
+        this.express.use(`/${definition.basePath}`, authMiddleware, Router()[method](`/${path}`, handler))
       })
     })
   }

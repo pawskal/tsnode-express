@@ -1,6 +1,7 @@
-import { Controller, Get } from "../../lib";
+import { Controller, Get, Authorization } from "../../lib";
 import { UserService } from './user.service';
 
+@Authorization
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService){}
@@ -11,7 +12,7 @@ export class UserController {
     return this.userService.getData()
   }
 
-  @Get('/')
+  @Get('', { auth: false })
   get(req, res, next) {
     return {
       data: 'simple data'
