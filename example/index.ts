@@ -4,11 +4,11 @@ import Application from '../lib/application';
 
 import * as UserModule from './modules'
 
-Application.configure((app: Application) => {
-  app.registerModule(UserModule);
-})
+const application = new Application();
 
-Application.start((express) => {
+application.registerModule(UserModule);
+
+application.start((express) => {
   express.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
