@@ -1,6 +1,13 @@
 export interface IAuthMiddlewate {
   verify(data: any): IVerifyResponse;
 }
+
+export interface IAuthOptions {
+  authorizationHeader?: string;
+  authorizationQueryParam?: string;
+  strategy?: string;
+}
+
 export interface IVerifyResponse{
   verify : boolean,
   data?: any
@@ -33,10 +40,7 @@ export interface IRoutes {
   delete?: IMethodSet;
 }
 
-
-
 export interface Type<T> {
   new(...args: any[]): T;
 }
-  
   
