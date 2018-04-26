@@ -6,6 +6,10 @@ import * as UserModule from './modules'
 
 const application = new Application();
 
+application.useConfig((config) => {
+  config.secret = 'SUPER PUPES SECRET';
+});
+
 application.registerModule(UserModule);
 
 application.start((express) => {
