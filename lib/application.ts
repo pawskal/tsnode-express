@@ -2,19 +2,33 @@ import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
 import { Injector } from './injector';
-import { IController, Type } from './interfaces';
+import { IController, IAuthOptions, Type } from './interfaces';
 
 // import secret from '../example/secret';
 // import jwt from 'jsonwebtoken';
 
+class AuthOptions implements IAuthOptions {
+  public strategy: string;
+  constructor(){
+    this.strategy = 'jwt';
+  }
+}
+
+export class ConfigProvider {
+  constructor(config) {
+    Object.assign(this, config);
+  }
+}
+
 class Application {
+
+  private static _instance: Application;
+  
   public get Injector(): Injector {
     return this._injector
   }
 
   private _injector: Injector;
-
-  private static _instance: Application;
 
   private express: any;
 
@@ -24,11 +38,13 @@ class Application {
 
   private enableAthorization: boolean = false;
 
-  private authorizationOptions: any = {};
+  private authorizationOptions: AuthOptions;
 
   private dbProvider: any;
 
-  private controllers: Map<string, IController> = new Map<string, IController>()
+  private configProvider: ConfigProvider;
+
+  private controllers: Map<string, IController>;
   
   constructor() {
     this.express = express();
@@ -37,6 +53,8 @@ class Application {
     this._injector = Injector.getInstance();
 
     this.controllers = this._injector.controllers;
+
+    this._injector.setInstance(this);
 
     return Application._instance || (Application._instance = this);
   }
@@ -64,10 +82,11 @@ class Application {
     }
   }
 
-  public useAuthorizationProvider<T>(provider: Type<T>, cb:any) {
+  public useAuthorizationProvider<T>(provider: Type<T>, cb: Function) {
     this.enableAthorization = true;
     this._injector.set(provider);
     this.authorizationProvider = this._injector.resolve<any>(provider.name);
+    this.authorizationOptions = new AuthOptions();
     cb(this.authorizationOptions);    
   }
 
@@ -76,10 +95,10 @@ class Application {
     this.dbProvider = this._injector.resolve<any>(provider.name);
   }
 
-  
-
-  private build() {
-    this.controllers.forEach(this.buildController.bind(this))
+  public useConfig(cb) {
+    const config = {}
+    cb(config);
+    this._injector.setInstance(new ConfigProvider(config));
   }
 
   private buildController(definition: IController, name) {
@@ -105,7 +124,7 @@ class Application {
 
         let authRequired = routes[method].auth === false ? false : definition.auth;
 
-        const authMiddleware = false ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
+        const authMiddleware = authRequired ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
 
         this.express.use(`/${definition.basePath}`, authMiddleware, Router()[method](`/${path}`, handler))
       })
@@ -113,7 +132,7 @@ class Application {
   }
 
   public start(cb: Function) {
-    this.build();
+    this.controllers.forEach(this.buildController.bind(this));
     cb(this.express);
   }
 }

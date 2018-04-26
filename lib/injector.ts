@@ -9,7 +9,9 @@ export class Injector  {
 
   private injections: Map<string, Type<any>> = new Map<string, Type<any>>();
 
-  public controllers: Map<string, IController> = new Map<string, IController>()
+  public controllers: Map<string, IController> = new Map<string, IController>();
+
+  private instances: Map<string, any> = new Map<string, any>();;
 
   private static _instance: Injector;
 
@@ -18,10 +20,18 @@ export class Injector  {
   }
 
   resolve<T>(targetName: string): T {
+    if(this.instances.has(targetName)){
+      return this.instances.get(targetName);
+    }
     const target = this.injections.get(targetName);
     const tokens = Reflect.getMetadata('design:paramtypes', target) || [];
     const instances = tokens.map(t => this.resolve<any>(t.name)) || [];
-    return new target(...instances);
+    this.instances.set(targetName, new target(...instances))
+    return this.instances.get(targetName);
+  }
+
+  public setInstance(target: any): void {
+    this.instances.set(target.constructor.name, target);
   }
 
   public set(target: Type<any>): void {
