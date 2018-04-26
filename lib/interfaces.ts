@@ -5,7 +5,12 @@ export interface IVerifyResponse{
   verify : boolean,
   data?: any
 }
-export interface IController {
+
+export interface IAuthOption {
+  auth?: boolean;
+}
+
+export interface IController extends IAuthOption {
   instance?: any;
   basePath?: string;
   routes?: Map<string, IRoutes>;
@@ -16,7 +21,7 @@ export interface IMethod {
   handler?: Function
 }
 
-export interface IMethodSet {
+export interface IMethodSet extends IAuthOption {
   origin?: IMethod
 }
 
@@ -27,6 +32,8 @@ export interface IRoutes {
   patch?: IMethodSet;
   delete?: IMethodSet;
 }
+
+
 
 export interface Type<T> {
   new(...args: any[]): T;
