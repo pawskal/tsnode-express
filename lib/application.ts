@@ -1,44 +1,30 @@
-import express from 'express';
+import express, { RequestHandler, Request } from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
 import Injector from './injector';
-import { IController, IAuthOptions, Type } from './interfaces';
-
-// import secret from '../example/secret';
-// import jwt from 'jsonwebtoken';
-
-class AuthOptions implements IAuthOptions {
-  public strategy: string;
-  constructor(){
-    this.strategy = 'jwt';
-  }
-}
-
-export class ConfigProvider {
-  constructor(config) {
-    Object.assign(this, config);
-  }
-}
+import { IController, IAuthOptions, Type, IAuthMiddleware, Response, IRoutes, IProviderDefinition } from './interfaces';
+import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
+import { AuthMiddleware } from './authMiddleware';
 
 class Application {
 
-  private static _instance: Application;
-  
   public get Injector(): Injector {
     return this._injector
   }
+
+  private static _instance: Application;
 
   private _injector: Injector;
 
   private express: any;
 
-  private authorizationProvider : any;
+  private authorizationProvider : IProviderDefinition;
 
   private enableAthorization: boolean = false;
 
   private authorizationOptions: AuthOptions;
 
-  private dbProvider: any;
+  private dbProvider: IProviderDefinition;
 
   private configProvider: ConfigProvider;
 
@@ -58,79 +44,76 @@ class Application {
   }
 
   public registerModule(objects: any): void {
-    Object.keys(objects).forEach((m) => console.log(m, 'registered'))
+    console.log(objects)
+    Object.keys(objects).forEach((m) => console.log(m, 'registered'));
   }
 
-  private authMiddleware(req, res, next) : void {
-    if(this.enableAthorization) {
-      
-      // const token = req.headers[this.authorizationOptions.header];
-      // // const decoded = jwt.verify(token,secret);
-      // // const verifyResult = this.authorizationProvider.verify(decoded);
-      
-      // if(verifyResult.verify){
-      //   req.data = verifyResult.data;
-      //   next();
-      // }
-      // else{
-      //   res.sendStatus(401);
-      // }
-    } else {
-      next();
-    }
+  private authMiddleware(req: Request, res: Response, next: Function) : void {
+    this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance, this.authorizationOptions) : next();
   }
 
-  public useAuthorizationProvider<T>(provider: Type<T>, cb: Function) {
+  public useAuthorizationProvider<T>(provider: Type<T>, cb: Function) : void {
     this.enableAthorization = true;
     this._injector.set(provider);
-    this.authorizationProvider = this._injector.resolve<any>(provider.name);
+    this.authorizationProvider = {
+      name: provider.name
+    };
     this.authorizationOptions = new AuthOptions();
-    cb(this.authorizationOptions);    
+    cb(this.authorizationOptions);
   }
 
-  public async useDBProvider<T>(provider: Type<T>) {
+  public useDBProvider<T>(provider: Type<T>) : void {
     this._injector.set(provider);
+    this.dbProvider = {
+      name: provider.name
+    }
     this.dbProvider = this._injector.resolve<any>(provider.name);
   }
 
-  public useConfig(cb: Function) {
-    const config = {}
+  public useConfig(cb: Function) : void {
+    const config = {};
     cb(config);
-    this._injector.setInstance(new ConfigProvider(config));
+    this.configProvider = new ConfigProvider(config)
+    this._injector.setInstance(this.configProvider);
   }
 
-  private buildController(definition: IController, name: string) {
+  private buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
-    const { routes, basePath, auth, instance } = definition
-    routes.forEach((routes, path) => {
-      Object.keys(routes).forEach((method) => {
-        async function handler(req, res, next) {
-          const stub = () => console.log('stub');
+    const { routes, basePath, auth, instance } = definition;
+    routes.forEach((routes: IRoutes, path: string) => 
+      Object.keys(routes).forEach((method: string) => {
+        async function handler(req: Request, res: Response, next: Function) {
+          const stub = () => {};
 
-          const before: Function = routes[method]['before'] || stub;
-          const origin: Function = routes[method]['origin'].handler || stub; 
-          const after: Function = routes[method]['after'] || stub; 
+          const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
+          const origin: Function = routes[method]['origin'] && routes[method]['origin'].handler || stub;
+          const after: Function = routes[method]['after'] && routes[method]['after'].handler || stub;
 
-          await before.apply(instance, arguments)
+          await before.apply(instance, arguments);
 
-          req.result = await origin.apply(instance, arguments)
+          res.result = await origin.call(instance, new RequestArguments(req));
 
-          await after.apply(instance, arguments)
-          res.send(req.result)
+          await after.apply(instance, arguments);
+          res.send(res.result);
         }
 
-        console.log('route', `/${basePath}/${path}`, 'registered')
+        console.log('route', `/${basePath}/${path}`, 'registered');
 
         const authRequired: boolean = routes[method].auth === false ? false : auth;
 
         const authMiddleware = authRequired ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
 
-        this.express.use(`/${basePath}`, authMiddleware, Router()[method](`/${path}`, handler))
-      })
-    })
+        this.express.use(`/${basePath}`, authMiddleware, Router()[method](`/${path}`, handler));
+      }));
   }
 
-  public start(cb: Function) {
+  public start(cb: Function) : void {
+    if(this.dbProvider) {
+      this.dbProvider = this._injector.resolve<any>(this.dbProvider.name);
+    }
+    if(this.authorizationProvider) {
+      this.authorizationProvider.instance = this._injector.resolve<IAuthMiddleware>(this.authorizationProvider.name);
+    }
     this.controllers.forEach(this.buildController.bind(this));
     cb(this.express);
   }

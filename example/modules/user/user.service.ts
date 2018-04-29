@@ -1,5 +1,5 @@
-import { Service, Application } from "../../lib";
-import { ConfigProvider } from "../../lib/application";
+import { Service, Application } from "../../../lib";
+import { ConfigProvider } from "../../../lib/helpers";
 
 @Service
 export class UserService {
@@ -8,7 +8,7 @@ export class UserService {
   }
 
   getData() {
-    console.log(this.config)
+    // console.log(this.config)
     return {
       data: 'some data'
     }

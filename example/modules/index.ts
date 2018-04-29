@@ -1,4 +1,3 @@
-import { UserService } from './user.service';
-import { UserController } from './user.controller';
+import * as UserModule from './user'
 
-export { UserService, UserController }
+export default UserModule
