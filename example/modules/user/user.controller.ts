@@ -1,6 +1,5 @@
 import { Controller, Get, Authorization, Before, After, Post } from "../../../lib";
 import { UserService } from './user.service';
-import { RequestArguments } from "../../../lib/helpers";
 import { IRequestArguments } from "../../../lib/interfaces";
 
 @Authorization({role: 'super'})
@@ -22,6 +21,12 @@ export class UserController {
 
   @Get(':id', { role: 'admin' })
   getById(data: IRequestArguments) {
+    console.log(data)
+    return this.userService.getData()
+  }
+
+  @Get(':id/data/:uid')
+  getByIdAndID(data: IRequestArguments) {
     console.log(data)
     return this.userService.getData()
   }

@@ -47,45 +47,9 @@ class Application {
 
   private authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
     
-    if(this.enableAthorization) {
-      let controllerName: string;
-      let controllerBasePath: string;
-      let routePath: string;
-      let methodName: string;
-      let role = 'default';
-      let roles = [];
-      this.controllers.forEach((controller: IController, name: string) => {
-        if(controller.basePath == req.baseUrl) {
-          controllerName = name;
-          controllerBasePath = controller.basePath;
-          role = controller.role;
-        }
-      })
-      const controller: IController = this.controllers.get(controllerName)
-      
-      controller.routes.forEach((route: IRoutes, path: string) => {
-        if(path == req.route.path) {
-          routePath = path;
-          methodName = Object.keys(route).find((method) => method == req.route.stack[0].method)
-        }
-      })
-
-      const methodDefinition = controller.routes.get(routePath)
-
-      const authTarget = new AuthTarget({
-        controller: controllerName,
-        method: methodName,
-        basePath: controllerBasePath,
-        path: routePath,
-        functionName: methodDefinition[methodName].origin.name,
-        role:  methodDefinition[methodName].role || role,
-        roles: methodDefinition[methodName].roles || roles,
-      });
-
-      new AuthMiddleware(req, res, next, this.authorizationProvider.instance, this.authorizationOptions, authTarget) 
-    } else {
-      next()
-    }
+    this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
+                                                 this.authorizationOptions, this.controllers) 
+                            : next();
   }
 
   public useAuthorizationProvider<T>(provider: Type<T>, cb: Function) : void {
