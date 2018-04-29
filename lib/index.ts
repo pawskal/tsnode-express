@@ -1,9 +1,6 @@
 import Application from './application';
-import { Injector } from './injector';
-
+import Injector from './injector';
 import * as Interfaces from './interfaces';
-
-Injector.getInstance();
 
 const { Service,
         Controller,

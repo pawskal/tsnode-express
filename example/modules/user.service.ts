@@ -3,7 +3,7 @@ import { ConfigProvider } from "../../lib/application";
 
 @Service
 export class UserService {
-  constructor(private app: Application, private config: ConfigProvider) {
+  constructor(private app: Application, private config: Application) {
     console.log('user service constructor')
   }
 

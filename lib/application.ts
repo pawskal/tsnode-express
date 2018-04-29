@@ -1,7 +1,7 @@
 import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
-import { Injector } from './injector';
+import Injector from './injector';
 import { IController, IAuthOptions, Type } from './interfaces';
 
 // import secret from '../example/secret';
@@ -34,8 +34,6 @@ class Application {
 
   private authorizationProvider : any;
 
-  private authorizationControllers: any = [];
-
   private enableAthorization: boolean = false;
 
   private authorizationOptions: AuthOptions;
@@ -59,8 +57,8 @@ class Application {
     return Application._instance || (Application._instance = this);
   }
 
-  public registerModule(modul): void {
-    Object.keys(modul).forEach((m) => console.log(m, 'registered'))
+  public registerModule(objects: any): void {
+    Object.keys(objects).forEach((m) => console.log(m, 'registered'))
   }
 
   private authMiddleware(req, res, next) : void {
@@ -95,38 +93,39 @@ class Application {
     this.dbProvider = this._injector.resolve<any>(provider.name);
   }
 
-  public useConfig(cb) {
+  public useConfig(cb: Function) {
     const config = {}
     cb(config);
     this._injector.setInstance(new ConfigProvider(config));
   }
 
-  private buildController(definition: IController, name) {
+  private buildController(definition: IController, name: string) {
     definition.instance = Application._instance.Injector.resolve<any>(name);
-    definition.routes.forEach((routes, path) => {
+    const { routes, basePath, auth, instance } = definition
+    routes.forEach((routes, path) => {
       Object.keys(routes).forEach((method) => {
         async function handler(req, res, next) {
           const stub = () => console.log('stub');
 
-          const before = routes[method]['before'] || stub;
-          const origin = routes[method]['origin'].handler || stub; 
-          const after = routes[method]['after'] || stub; 
+          const before: Function = routes[method]['before'] || stub;
+          const origin: Function = routes[method]['origin'].handler || stub; 
+          const after: Function = routes[method]['after'] || stub; 
 
-          await before.apply(definition.instance, arguments)
+          await before.apply(instance, arguments)
 
-          req.result = await origin.apply(definition.instance, arguments)
+          req.result = await origin.apply(instance, arguments)
 
-          await after.apply(definition.instance, arguments)
+          await after.apply(instance, arguments)
           res.send(req.result)
         }
 
-        console.log(`/${definition.basePath}/${path}`, 'registered')
+        console.log('route', `/${basePath}/${path}`, 'registered')
 
-        let authRequired = routes[method].auth === false ? false : definition.auth;
+        const authRequired: boolean = routes[method].auth === false ? false : auth;
 
         const authMiddleware = authRequired ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
 
-        this.express.use(`/${definition.basePath}`, authMiddleware, Router()[method](`/${path}`, handler))
+        this.express.use(`/${basePath}`, authMiddleware, Router()[method](`/${path}`, handler))
       })
     })
   }
