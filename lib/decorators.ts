@@ -8,7 +8,6 @@ export function Authorization (target: Type<any>) : void {
 export function Controller (basePath: string) : Function {
   return (target) : void => {
     const controller: IController = this.controllers.get(target.name)
-    console.log(this.controllers)
     Object.assign(controller, { basePath })
     this.set(target);
   }
