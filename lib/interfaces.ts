@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-export interface IProviderDefinition {
+export interface IProviderDefinition<T> {
   name: string;
-  instance?: any;
+  instance?: T;
 }
 
 export interface Response extends Response {

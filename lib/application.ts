@@ -18,13 +18,13 @@ class Application {
 
   private express: any;
 
-  private authorizationProvider : IProviderDefinition;
+  private authorizationProvider : IProviderDefinition<IAuthMiddleware>;
 
   private enableAthorization: boolean = false;
 
   private authorizationOptions: AuthOptions;
 
-  private dbProvider: IProviderDefinition;
+  private dbProvider: IProviderDefinition<any>;
 
   private configProvider: ConfigProvider;
 
@@ -43,10 +43,7 @@ class Application {
     return Application._instance || (Application._instance = this);
   }
 
-  public registerModule(objects: any): void {
-    console.log(objects)
-    Object.keys(objects).forEach((m) => console.log(m, 'registered'));
-  }
+  public registerModule(objects: any): void {}
 
   private authMiddleware(req: Request, res: Response, next: Function) : void {
     this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance, this.authorizationOptions) : next();
@@ -97,13 +94,11 @@ class Application {
           res.send(res.result);
         }
 
-        console.log('route', `/${basePath}/${path}`, 'registered');
-
         const authRequired: boolean = routes[method].auth === false ? false : auth;
 
         const authMiddleware = authRequired ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
 
-        this.express.use(`/${basePath}`, authMiddleware, Router()[method](`/${path}`, handler));
+        this.express.use(`/${basePath}`, Router()[method](`/${path}`, authMiddleware, handler));
       }));
   }
 
