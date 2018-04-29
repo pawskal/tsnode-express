@@ -1,14 +1,16 @@
-import { IController, IAuthOption, Type } from './interfaces';
+import { IController, IAuthOption, Type, IAuthRole } from './interfaces';
 
-export function Authorization (target: Type<any>) : void {
-  const controler: IController = this.controllers.get('UserController')
-  controler.auth = true
+export function Authorization (auth?: IAuthRole) : Function {
+  return (target: Type<any>) : void => {
+    const controller: IController = this.controllers.get('UserController');
+    Object.assign(controller, { auth: true, role: auth && auth.role || 'default' });
+  }
 }
 
 export function Controller (basePath: string) : Function {
   return (target) : void => {
-    const controller: IController = this.controllers.get(target.name)
-    Object.assign(controller, { basePath })
+    const controller: IController = this.controllers.get(target.name);
+    Object.assign(controller, { basePath: this.normalizePath(basePath) });
     this.set(target);
   }
 }

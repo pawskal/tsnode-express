@@ -3,12 +3,12 @@ import { ConfigProvider } from "../../../lib/helpers";
 
 @Service
 export class UserService {
-  constructor(private app: Application, private config: Application) {
+  constructor(private app: Application, private config: ConfigProvider) {
     console.log('user service constructor')
   }
 
   getData() {
-    // console.log(this.config)
+    console.log(this.config)
     return {
       data: 'some data'
     }

@@ -11,7 +11,8 @@ export class AuthProvider implements IAuthMiddleware {
     verify(data: any): IVerifyResponse {
         console.log(data)
         return {
-            success: data.name == 'pawskal'
+            success: data.name == 'pawskal',
+            data
         };
     }
 }

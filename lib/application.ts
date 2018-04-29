@@ -1,15 +1,15 @@
-import express, { RequestHandler, Request } from 'express';
+import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
 import Injector from './injector';
-import { IController, IAuthOptions, Type, IAuthMiddleware, Response, IRoutes, IProviderDefinition } from './interfaces';
-import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
+import { IController, IAuthOptions, Type, IAuthMiddleware, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
+import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 import { AuthMiddleware } from './authMiddleware';
 
 class Application {
 
   public get Injector(): Injector {
-    return this._injector
+    return this._injector;
   }
 
   private static _instance: Application;
@@ -45,8 +45,47 @@ class Application {
 
   public registerModule(objects: any): void {}
 
-  private authMiddleware(req: Request, res: Response, next: Function) : void {
-    this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance, this.authorizationOptions) : next();
+  private authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
+    
+    if(this.enableAthorization) {
+      let controllerName: string;
+      let controllerBasePath: string;
+      let routePath: string;
+      let methodName: string;
+      let role = 'default';
+      let roles = [];
+      this.controllers.forEach((controller: IController, name: string) => {
+        if(controller.basePath == req.baseUrl) {
+          controllerName = name;
+          controllerBasePath = controller.basePath;
+          role = controller.role;
+        }
+      })
+      const controller: IController = this.controllers.get(controllerName)
+      
+      controller.routes.forEach((route: IRoutes, path: string) => {
+        if(path == req.route.path) {
+          routePath = path;
+          methodName = Object.keys(route).find((method) => method == req.route.stack[0].method)
+        }
+      })
+
+      const methodDefinition = controller.routes.get(routePath)
+
+      const authTarget = new AuthTarget({
+        controller: controllerName,
+        method: methodName,
+        basePath: controllerBasePath,
+        path: routePath,
+        functionName: methodDefinition[methodName].origin.name,
+        role:  methodDefinition[methodName].role || role,
+        roles: methodDefinition[methodName].roles || roles,
+      });
+
+      new AuthMiddleware(req, res, next, this.authorizationProvider.instance, this.authorizationOptions, authTarget) 
+    } else {
+      next()
+    }
   }
 
   public useAuthorizationProvider<T>(provider: Type<T>, cb: Function) : void {
@@ -79,7 +118,7 @@ class Application {
     const { routes, basePath, auth, instance } = definition;
     routes.forEach((routes: IRoutes, path: string) => 
       Object.keys(routes).forEach((method: string) => {
-        async function handler(req: Request, res: Response, next: Function) {
+        async function handler(req: IRequest, res: IResponse, next: Function) {
           const stub = () => {};
 
           const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
@@ -94,11 +133,11 @@ class Application {
           res.send(res.result);
         }
 
-        const authRequired: boolean = routes[method].auth === false ? false : auth;
+        routes[method].auth = routes[method].auth === false ? false : auth;
 
-        const authMiddleware = authRequired ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
+        const authMiddleware = routes[method].auth ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
 
-        this.express.use(`/${basePath}`, Router()[method](`/${path}`, authMiddleware, handler));
+        this.express.use(basePath, Router()[method](path, authMiddleware, handler));
       }));
   }
 
