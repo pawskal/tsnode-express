@@ -9,8 +9,9 @@ export interface IAuthOptions {
 }
 
 export interface IVerifyResponse{
-  verify : boolean,
+  success : boolean,
   data?: any
+  appendToReq: boolean;
 }
 
 export interface IAuthOption {
