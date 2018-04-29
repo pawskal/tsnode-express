@@ -63,36 +63,36 @@ export default class Injector {
     if(!this.controllers.has(target.constructor.name)) {
       this.controllers.set(target.constructor.name, {
         routes: new Map<string, IRoutes>()
-      })
+      });
     }
 
     const path = this.normalizePath(defaultPath);
 
     const controller: IController = this.controllers.get(target.constructor.name)
-    const route: IRoutes = controller.routes.get(path) || {}
+    const route: IRoutes = controller.routes.get(path) || {};
     
-    let methidDefinition = route[method] || {};
-    methidDefinition = Object.assign(methidDefinition, {
+    let methodDefinition = route[method] || {};
+    Object.assign(methodDefinition, {
       auth: authOption && authOption.auth,
       role: authOption && authOption.role,
       [type] : {
         name: fname,
         handler: descriptor.value as Function
       }
-    })
-    route[method] = methidDefinition;
+    });
+    route[method] = methodDefinition;
     controller.routes.set(path, route);
   }
 
   public normalizePath(defaultPath: string): string {
     if(defaultPath.endsWith('/') && !defaultPath.startsWith('/')){
-      return `/${defaultPath}`.slice(0, -1)
+      return `/${defaultPath}`.slice(0, -1);
     } else if(defaultPath.endsWith('/')) {
-      return defaultPath.slice(0, -1)
+      return defaultPath.slice(0, -1);
     } else if(!defaultPath.startsWith('/')){
       return `/${defaultPath}`;
     } else {
-      return defaultPath
+      return defaultPath;
     }
   }
 }
