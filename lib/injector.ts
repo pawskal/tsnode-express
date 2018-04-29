@@ -39,7 +39,7 @@ export default class Injector {
     return Injector._instance || (Injector._instance = this);
   }
 
-  resolve<T>(targetName: string): T {
+  public resolve<T>(targetName: string): T {
     if(this.instances.has(targetName)){
       return this.instances.get(targetName);
     }
@@ -59,18 +59,22 @@ export default class Injector {
   }
 
   private defineRoute(method: string, type: string, target: Type<any>,
-                      path: string, fname: string, descriptor: PropertyDescriptor, authOption?: IAuthOption) : void {
+                      defaultPath: string, fname: string, descriptor: PropertyDescriptor, authOption?: IAuthOption) : void {
     if(!this.controllers.has(target.constructor.name)) {
       this.controllers.set(target.constructor.name, {
         routes: new Map<string, IRoutes>()
       })
     }
+
+    const path = this.normalizePath(defaultPath);
+
     const controller: IController = this.controllers.get(target.constructor.name)
     const route: IRoutes = controller.routes.get(path) || {}
     
     let methidDefinition = route[method] || {};
     methidDefinition = Object.assign(methidDefinition, {
       auth: authOption && authOption.auth,
+      role: authOption && authOption.role,
       [type] : {
         name: fname,
         handler: descriptor.value as Function
@@ -78,5 +82,17 @@ export default class Injector {
     })
     route[method] = methidDefinition;
     controller.routes.set(path, route);
+  }
+
+  public normalizePath(defaultPath: string): string {
+    if(defaultPath.endsWith('/') && !defaultPath.startsWith('/')){
+      return `/${defaultPath}`.slice(0, -1)
+    } else if(defaultPath.endsWith('/')) {
+      return defaultPath.slice(0, -1)
+    } else if(!defaultPath.startsWith('/')){
+      return `/${defaultPath}`;
+    } else {
+      return defaultPath
+    }
   }
 }

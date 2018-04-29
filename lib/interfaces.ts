@@ -1,20 +1,20 @@
 import { Request, Response } from 'express';
 
-export interface IProviderDefinition {
+export interface IProviderDefinition<T> {
   name: string;
-  instance?: any;
+  instance?: T;
 }
 
-export interface Response extends Response {
+export interface IResponse extends Response {
   result?: any;
 }
 
-export interface Request extends Request {
+export interface IRequest extends Request {
   auth?: any;
 }
 
 export interface IAuthMiddleware {
-  verify(data: any): IVerifyResponse;
+  verify(data: any, authTarget: IAuthTarget): IVerifyResponse;
 }
 
 export interface IAuthOptions {
@@ -24,12 +24,12 @@ export interface IAuthOptions {
   secret?: string;
 }
 
-export interface IVerifyResponse{
-  success : boolean,
-  data?: any
+export interface IVerifyResponse {
+  success : boolean;
+  data?: any;
 }
 
-export interface IAuthOption {
+export interface IAuthOption extends IAuthRole {
   auth?: boolean;
 }
 
@@ -40,12 +40,14 @@ export interface IController extends IAuthOption {
 }
 
 export interface IMethod {
-  name?: string
-  handler?: Function
+  name?: string;
+  handler?: Function;
 }
 
 export interface IMethodSet extends IAuthOption {
-  origin?: IMethod
+  origin?: IMethod;
+  before?: IMethod;
+  after?: IMethod;
 }
 
 export interface IRoutes {
@@ -65,5 +67,18 @@ export interface IRequestArguments {
   params?: any;
   query?: any;
   auth?: any;
+}
+
+export interface IAuthRole {
+  role?: string;
+  roles?: Array<string>;
+}
+
+export interface IAuthTarget extends IAuthRole {
+  controller: string;
+  method: string;
+  basePath: string;
+  path: string;
+  functionName: string;
 }
   

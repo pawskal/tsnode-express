@@ -1,18 +1,21 @@
 import jwt from 'jsonwebtoken';
-import { IAuthMiddleware, IAuthOptions, Request, Response } from './interfaces';
+import { IAuthMiddleware, IAuthOptions, IRequest, IResponse, IAuthTarget } from './interfaces';
 
 export class AuthMiddleware {
-    constructor(req: Request, res: Response, next: Function, authProvider: IAuthMiddleware, authOptions: IAuthOptions) {
-      const token = req.headers[authOptions.authorizationHeader.toLocaleLowerCase()] || req.query[authOptions.authorizationQueryParam]
-      if(!token) {
-        return res.status(401).send({ message: 'Unauthorized' });
-      }
-      const { success, data } = authProvider.verify(jwt.verify(token, authOptions.secret));
-      if(!success) {
-        return res.status(401).send({ message: 'Unauthorized' });
-      }
-      req.auth = data;
-      next();
+  constructor(req: IRequest, res: IResponse, next: Function, authProvider: IAuthMiddleware, authOptions: IAuthOptions, authTarget: IAuthTarget) {
+    const token = req.headers[authOptions.authorizationHeader.toLocaleLowerCase()] || req.query[authOptions.authorizationQueryParam];
+    console.log(authTarget);
+    if(!token) {
+      return res.status(401).send({ message: 'Unauthorized' });
     }
+    const { success, data } = authOptions.strategy == 'jwt' ?
+                              authProvider.verify(jwt.verify(token, authOptions.secret), authTarget) :
+                              authProvider.verify(token, authTarget);
+    if(!success) {
+      return res.status(401).send({ message: 'Unauthorized' });
+    }
+    req.auth = data;
+    next();
   }
+}
   
