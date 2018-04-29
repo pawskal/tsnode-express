@@ -1,4 +1,19 @@
-export interface IAuthMiddlewate {
+import { Request, Response } from 'express';
+
+export interface IProviderDefinition {
+  name: string;
+  instance?: any;
+}
+
+export interface Response extends Response {
+  result?: any;
+}
+
+export interface Request extends Request {
+  auth?: any;
+}
+
+export interface IAuthMiddleware {
   verify(data: any): IVerifyResponse;
 }
 
@@ -6,12 +21,12 @@ export interface IAuthOptions {
   authorizationHeader?: string;
   authorizationQueryParam?: string;
   strategy?: string;
+  secret?: string;
 }
 
 export interface IVerifyResponse{
   success : boolean,
   data?: any
-  appendToReq: boolean;
 }
 
 export interface IAuthOption {
@@ -43,5 +58,12 @@ export interface IRoutes {
 
 export interface Type<T> {
   new(...args: any[]): T;
+}
+
+export interface IRequestArguments {
+  body?: any;
+  params?: any;
+  query?: any;
+  auth?: any;
 }
   

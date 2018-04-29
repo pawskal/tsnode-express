@@ -44,3 +44,13 @@ export function Delete (path: string, authOption?: IAuthOption) : Function {
   return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
     this.defineRoute('delete', 'origin', target, path, fname, descriptor, authOption);
 }
+
+export function Before(path: string, method: string) : Function {
+  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
+    this.defineRoute(method.toLowerCase(), 'before', target, path, fname, descriptor);
+}
+
+export function After(path: string, method: string) : Function {
+  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
+    this.defineRoute(method.toLowerCase(), 'after', target, path, fname, descriptor);
+}

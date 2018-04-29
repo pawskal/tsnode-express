@@ -1,9 +1,8 @@
 import 'reflect-metadata'
-import { UserController } from '../example/modules/user.controller';
 import { Type, IController, IRoutes, IAuthOption } from './interfaces';
-import { Controller, Service, Authorization, Get, Post, Patch, Put, Delete } from './decorators'
+import { Controller, Service, Authorization, Get, Post, Patch, Put, Delete, Before, After } from './decorators'
 
-export default class Injector  {
+export default class Injector {
   public static getInstance(): Injector {
     return new Injector();
   }
@@ -25,6 +24,10 @@ export default class Injector  {
   public static Patch: Function = Patch.bind(Injector.getInstance()); 
 
   public static Delete: Function = Delete.bind(Injector.getInstance());
+
+  public static Before: Function = Before.bind(Injector.getInstance());
+
+  public static After: Function = After.bind(Injector.getInstance());
 
   private injections: Map<string, Type<any>> = new Map<string, Type<any>>();
 
@@ -64,14 +67,16 @@ export default class Injector  {
     }
     const controller: IController = this.controllers.get(target.constructor.name)
     const route: IRoutes = controller.routes.get(path) || {}
-    controller.routes.set(path, Object.assign(route, { 
-      [method]: {
-        auth: authOption && authOption.auth,
-        [type] : {
-          name: fname,
-          handler: descriptor.value as Function
-        }
+    
+    let methidDefinition = route[method] || {};
+    methidDefinition = Object.assign(methidDefinition, {
+      auth: authOption && authOption.auth,
+      [type] : {
+        name: fname,
+        handler: descriptor.value as Function
       }
-    }));
+    })
+    route[method] = methidDefinition;
+    controller.routes.set(path, route);
   }
 }

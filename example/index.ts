@@ -2,13 +2,19 @@ import http from 'http';
 
 import Application from '../lib/application';
 
-import * as UserModule from './modules'
+import * as UserModule from './modules';
+import { IAuthOptions } from '../lib/interfaces';
+import { AuthProvider } from './modules/authProvider';
 
 const application = new Application();
 
 application.useConfig((config) => {
   config.secret = 'SUPER PUPES SECRET';
 });
+
+application.useAuthorizationProvider(AuthProvider, (options: IAuthOptions) => {
+  options.secret = 'SUPER PUPES SECRET';
+})
 
 application.registerModule(UserModule);
 

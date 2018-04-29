@@ -9,7 +9,9 @@ const { Service,
         Post, 
         Put, 
         Patch, 
-        Delete } = Injector;
+        Delete,
+        Before,
+        After } = Injector;
 
 export { Application,
         Service,
@@ -19,6 +21,8 @@ export { Application,
         Post, 
         Put, 
         Patch, 
-        Delete };
+        Delete,
+        Before,
+        After };
 
 export default Interfaces;
