@@ -1,9 +1,9 @@
-import { Controller, Get, Authorization, Before, After } from "../../../lib";
+import { Controller, Get, Authorization, Before, After, Post } from "../../../lib";
 import { UserService } from './user.service';
 import { RequestArguments } from "../../../lib/helpers";
 import { IRequestArguments } from "../../../lib/interfaces";
 
-@Authorization
+@Authorization({role: 'super'})
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService){}
@@ -20,14 +20,21 @@ export class UserController {
     console.log('After %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
   }
 
-  @Get(':id')
+  @Get(':id', { role: 'admin' })
   getById(data: IRequestArguments) {
     console.log(data)
     return this.userService.getData()
   }
 
-  @Get('', { auth: false })
+  @Get('/', { auth: false })
   get(req, res, next) {
+    return {
+      data: 'simple data'
+    }
+  }
+
+  @Post(':id')
+  postById(req, res, next) {
     return {
       data: 'simple data'
     }
