@@ -5,6 +5,7 @@ import Injector from './injector';
 import { IController, IAuthOptions, Type, IAuthMiddleware, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 import { AuthMiddleware } from './authMiddleware';
+import HttpClient from './httpClient';
 
 class Application {
 
@@ -39,6 +40,8 @@ class Application {
     this.controllers = this._injector.controllers;
 
     this._injector.setInstance(this);
+    this._injector.setInstance(new HttpClient());
+    this.router = Router();
 
     return Application._instance || (Application._instance = this);
   }
@@ -80,7 +83,14 @@ class Application {
   private buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
     const { routes, basePath, auth, instance } = definition;
-    routes.forEach((routes: IRoutes, path: string) => 
+    const sortedRoutes = new Map<string, IRoutes>();
+    const sortedKeys = [...routes.entries()];
+
+    sortedKeys
+      .sort((a: Array) => a[0].startsWith('/:') ? 1 : -1)
+      .forEach((a) => sortedRoutes.set(a[0], routes.get(a[0])));
+
+    sortedRoutes.forEach((routes: IRoutes, path: string) =>
       Object.keys(routes).forEach((method: string) => {
         async function handler(req: IRequest, res: IResponse, next: Function) {
           const stub = () => {};
@@ -101,7 +111,9 @@ class Application {
 
         const authMiddleware = routes[method].auth ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
 
-        this.express.use(basePath, Router()[method](path, authMiddleware, handler));
+        console.log(basePath, method, path)
+
+        this.express.use(basePath, this.router[method](path, authMiddleware, handler));
       }));
   }
 

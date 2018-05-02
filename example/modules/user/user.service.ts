@@ -1,16 +1,20 @@
 import { Service, Application } from "../../../lib";
-import { ConfigProvider } from "../../../lib/helpers";
+import { User } from './user.model';
+import mongoose from 'mongoose';
+
 
 @Service
 export class UserService {
-  constructor(private app: Application, private config: ConfigProvider) {
-    console.log('user service constructor')
+
+  constructor(private app: Application) {
+    mongoose.connect('mongodb://admin:admin@ds211440.mlab.com:11440/users');
   }
 
-  getData() {
-    console.log(this.config)
-    return {
-      data: 'some data'
-    }
+  getAll(query) {
+    return User.find(query);
+  }
+
+  create(user: IUser){
+    return User.create(user);
   }
 }
