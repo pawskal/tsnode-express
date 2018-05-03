@@ -16,6 +16,7 @@ export function Controller (basePath: string) : Function {
 }
 
 export function Service (target: Type<any>) : void {
+  console.log(target)
   this.set(target);
 }
 
