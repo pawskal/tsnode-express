@@ -26,13 +26,13 @@ export class UserController {
   @Get(':id', { role: 'admin' })
   getById(data: IRequestArguments) {
     console.log(data)
-    return this.userService.getData()
+    // return this.userService.getData()
   }
 
   @Get(':id/data/:uid')
   getByIdAndID(data: IRequestArguments) {
     console.log(data)
-    return this.userService.getData()
+    // return this.userService.getData()
   }
 
   @Get('/', { auth: false })
@@ -42,7 +42,7 @@ export class UserController {
 
   @Get('/search',{auth: false})
   async getSearchResult() {
-    return await this.search.get({})
+    return await this.search.get()
   }
 
   @Post('/register', { auth: false })
