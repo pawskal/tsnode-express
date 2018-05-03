@@ -1,11 +1,15 @@
 import { Controller, Get, Authorization, Before, After, Post } from "../../../lib";
 import { UserService } from './user.service';
-import { IRequestArguments } from "../../../lib/interfaces";
+import { IRequestArguments } from '../../../lib/interfaces';
+import jwt from 'jsonwebtoken';
+import { ConfigProvider } from '../../../lib/helpers';
+import SearchService from '../search/search.service';
 
-@Authorization({role: 'super'})
-@Controller('user')
+// @Authorization({ role: 'super' })
+@Controller('users')
 export class UserController {
-  constructor(private userService: UserService){}
+  constructor(private userService: UserService, private config: ConfigProvider, private search: SearchService) {
+  }
 
   @Before(':id', 'GET')
   beforeGetById(req, res, next) {
@@ -22,26 +26,33 @@ export class UserController {
   @Get(':id', { role: 'admin' })
   getById(data: IRequestArguments) {
     console.log(data)
-    return this.userService.getData()
+    // return this.userService.getData()
   }
 
   @Get(':id/data/:uid')
   getByIdAndID(data: IRequestArguments) {
     console.log(data)
-    return this.userService.getData()
+    // return this.userService.getData()
   }
 
   @Get('/', { auth: false })
-  get(req, res, next) {
-    return {
-      data: 'simple data'
-    }
+  async get(data: IRequestArguments) {
+    return await this.userService.getAll(data.query);
   }
 
-  @Post(':id')
-  postById(req, res, next) {
-    return {
-      data: 'simple data'
-    }
+  @Get('/search',{auth: false})
+  async getSearchResult() {
+    return await this.search.get()
+  }
+
+  @Post('/register', { auth: false })
+  async registerUser({ body }) {
+    return await this.userService.create(body);
+  }
+
+
+  @Post('/auth', { auth: false })
+  async authUser({ body }) {
+    return await jwt.sign({ name: body.name }, this.config.config.secret);
   }
 }

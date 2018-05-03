@@ -5,6 +5,7 @@ import Injector from './injector';
 import { IController, IAuthOptions, Type, IAuthMiddleware, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 import { AuthMiddleware } from './authMiddleware';
+import HttpClient from './httpClient';
 
 class Application {
 
@@ -17,6 +18,8 @@ class Application {
   private _injector: Injector;
 
   private express: any;
+
+  private router: any;
 
   private authorizationProvider : IProviderDefinition<IAuthMiddleware>;
 
@@ -32,6 +35,8 @@ class Application {
   
   constructor() {
     this.express = express();
+    this.router = Router();
+    
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
     this._injector = Injector.getInstance();
@@ -39,6 +44,7 @@ class Application {
     this.controllers = this._injector.controllers;
 
     this._injector.setInstance(this);
+    this._injector.setInstance(new HttpClient());
 
     return Application._instance || (Application._instance = this);
   }
@@ -79,30 +85,36 @@ class Application {
 
   private buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
+    
     const { routes, basePath, auth, instance } = definition;
-    routes.forEach((routes: IRoutes, path: string) => 
-      Object.keys(routes).forEach((method: string) => {
-        async function handler(req: IRequest, res: IResponse, next: Function) {
-          const stub = () => {};
 
-          const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
-          const origin: Function = routes[method]['origin'] && routes[method]['origin'].handler || stub;
-          const after: Function = routes[method]['after'] && routes[method]['after'].handler || stub;
+    new Map<string, IRoutes>([...routes.entries()]
+      .sort((a: Array<any>) => a[0].startsWith('/:') ? 1 : -1))
+      .forEach((routes: IRoutes, path: string) =>
+        Object.keys(routes).forEach((method: string) => {
+          async function handler(req: IRequest, res: IResponse, next: Function) {
+            const stub = () => {};
 
-          await before.apply(instance, arguments);
+            const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
+            const origin: Function = routes[method]['origin'] && routes[method]['origin'].handler || stub;
+            const after: Function = routes[method]['after'] && routes[method]['after'].handler || stub;
 
-          res.result = await origin.call(instance, new RequestArguments(req));
+            await before.apply(instance, arguments);
 
-          await after.apply(instance, arguments);
-          res.send(res.result);
-        }
+            res.result = await origin.call(instance, new RequestArguments(req));
 
-        routes[method].auth = routes[method].auth === false ? false : auth;
+            await after.apply(instance, arguments);
+            res.send(res.result);
+          }
 
-        const authMiddleware = routes[method].auth ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
+          routes[method].auth = routes[method].auth === false ? false : auth;
 
-        this.express.use(basePath, Router()[method](path, authMiddleware, handler));
-      }));
+          const authMiddleware = routes[method].auth ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
+
+          console.log(basePath, method, path)
+
+          this.express.use(basePath, this.router[method](path, authMiddleware, handler));
+        }));
   }
 
   public start(cb: Function) : void {
