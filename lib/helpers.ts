@@ -3,12 +3,16 @@ import { IAuthMiddleware, IAuthOptions, IRequest, IResponse, IRequestArguments, 
 export class AuthOptions implements IAuthOptions {
   public strategy: string = 'jwt';
   public authorizationHeader: string = 'Authorization';
-  public authorizationQueryParam: string = 'access_token';
+  public authorizationQueryParam: string = 'access_token'
+  public authorizationBodyField: string = 'accessToken';
   constructor() {}
 }
 
 export class ConfigProvider {
-  constructor(public config) {}
+  [x: string]: any;
+  constructor(config: any) {
+    Object.assign(this, config)
+  }
 }
 
 export class RequestArguments implements IRequestArguments {

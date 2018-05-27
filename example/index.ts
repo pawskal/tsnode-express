@@ -26,7 +26,7 @@ application.start((express) => {
   });
   
   http.createServer(express).listen(3000, () => {
-    console.log('!!!!!!!!!!!!!!!!!!')
+    console.log('Server listening')
   })
 })
 

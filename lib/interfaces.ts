@@ -20,6 +20,7 @@ export interface IAuthMiddleware {
 export interface IAuthOptions {
   authorizationHeader?: string;
   authorizationQueryParam?: string;
+  authorizationBodyField?: string;
   strategy?: string;
   secret?: string;
 }

@@ -1,16 +1,15 @@
 import { IAuthMiddleware, IVerifyResponse } from "../../lib/interfaces";
 import { ConfigProvider } from "../../lib/helpers";
-import { UserService } from "./user";
 
 
 @Reflect.metadata('design', 'paramtypes')
 export class AuthProvider implements IAuthMiddleware {
-    constructor(config: UserService){
+    constructor(config: ConfigProvider) {
 
     }
 
-    verify(data: any): IVerifyResponse {
-        console.log(data)
+    verify(data: any, authTarget): IVerifyResponse {
+        console.log(authTarget)
         return {
             success: data.name == 'pawskal',
             data
