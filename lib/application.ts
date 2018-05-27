@@ -5,7 +5,6 @@ import Injector from './injector';
 import { IController, IAuthOptions, Type, IAuthMiddleware, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 import { AuthMiddleware } from './authMiddleware';
-import HttpClient from './httpClient';
 
 class Application {
 
@@ -19,13 +18,13 @@ class Application {
 
   private express: any;
 
+  private router: any;
+
   private authorizationProvider : IProviderDefinition<IAuthMiddleware>;
 
   private enableAthorization: boolean = false;
 
   private authorizationOptions: AuthOptions;
-
-  private dbProvider: IProviderDefinition<any>;
 
   private configProvider: ConfigProvider;
 
@@ -33,6 +32,8 @@ class Application {
   
   constructor() {
     this.express = express();
+    this.router = Router();
+    
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
     this._injector = Injector.getInstance();
@@ -40,8 +41,6 @@ class Application {
     this.controllers = this._injector.controllers;
 
     this._injector.setInstance(this);
-    this._injector.setInstance(new HttpClient());
-    this.router = Router();
 
     return Application._instance || (Application._instance = this);
   }
@@ -49,7 +48,6 @@ class Application {
   public registerModule(objects: any): void {}
 
   private authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
-    
     this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
                                                  this.authorizationOptions, this.controllers) 
                             : next();
@@ -65,14 +63,6 @@ class Application {
     cb(this.authorizationOptions);
   }
 
-  public useDBProvider<T>(provider: Type<T>) : void {
-    this._injector.set(provider);
-    this.dbProvider = {
-      name: provider.name
-    }
-    this.dbProvider = this._injector.resolve<any>(provider.name);
-  }
-
   public useConfig(cb: Function) : void {
     const config = {};
     cb(config);
@@ -82,45 +72,41 @@ class Application {
 
   private buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
+    
     const { routes, basePath, auth, instance } = definition;
-    const sortedRoutes = new Map<string, IRoutes>();
-    const sortedKeys = [...routes.entries()];
 
-    sortedKeys
-      .sort((a: Array) => a[0].startsWith('/:') ? 1 : -1)
-      .forEach((a) => sortedRoutes.set(a[0], routes.get(a[0])));
+    new Map<string, IRoutes>([...routes.entries()]
+      .sort(([path]: Array<any>) => path.startsWith('/:') ? 1 : -1))
+      .forEach((routes: IRoutes, path: string) =>
+        Object.keys(routes).forEach((method: string) => {
+          async function handler(req: IRequest, res: IResponse, next: Function) {
+            const stub = () => {};
 
-    sortedRoutes.forEach((routes: IRoutes, path: string) =>
-      Object.keys(routes).forEach((method: string) => {
-        async function handler(req: IRequest, res: IResponse, next: Function) {
-          const stub = () => {};
+            const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
+            const origin: Function = routes[method]['origin'] && routes[method]['origin'].handler || stub;
+            const after: Function = routes[method]['after'] && routes[method]['after'].handler || stub;
 
-          const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
-          const origin: Function = routes[method]['origin'] && routes[method]['origin'].handler || stub;
-          const after: Function = routes[method]['after'] && routes[method]['after'].handler || stub;
+            try {
+              await before.apply(instance, arguments);
+              res.result = await origin.call(instance, new RequestArguments(req)) || {};
+              await after.apply(instance, arguments);
+              res.send(res.result);
+            } catch (e) {
+              res.status(500).send(e)
+            }
+          }
 
-          await before.apply(instance, arguments);
+          routes[method].auth = routes[method].auth === false ? false : auth;
 
-          res.result = await origin.call(instance, new RequestArguments(req));
-
-          await after.apply(instance, arguments);
-          res.send(res.result);
-        }
-
-        routes[method].auth = routes[method].auth === false ? false : auth;
-
-        const authMiddleware = routes[method].auth ? this.authMiddleware.bind(this) : function () { arguments[2].call() };
-
-        console.log(basePath, method, path)
-
-        this.express.use(basePath, this.router[method](path, authMiddleware, handler));
-      }));
+          const authMiddleware = routes[method].auth ?
+                                 this.authMiddleware.bind(this) :
+                                 function () { arguments[2].call() };
+          console.log(method, basePath, path)
+          this.express.use(basePath, this.router[method](path, authMiddleware, handler));
+        }));
   }
 
   public start(cb: Function) : void {
-    if(this.dbProvider) {
-      this.dbProvider = this._injector.resolve<any>(this.dbProvider.name);
-    }
     if(this.authorizationProvider) {
       this.authorizationProvider.instance = this._injector.resolve<IAuthMiddleware>(this.authorizationProvider.name);
     }
