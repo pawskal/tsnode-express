@@ -9,7 +9,7 @@ import { AuthProvider } from './modules/authProvider';
 const application = new Application();
 
 application.useConfig((config) => {
-  config.secret = 'SUPER PUPES SECRET';
+  config.test = 'test config field';
 });
 
 application.useAuthorizationProvider(AuthProvider, (options: IAuthOptions) => {
@@ -30,6 +30,4 @@ application.start((express) => {
   })
 })
 
-
-
-
+export default application
