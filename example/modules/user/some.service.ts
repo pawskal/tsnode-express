@@ -1,14 +1,13 @@
 import { Service, Application } from "../../../lib";
-
+import { ConfigProvider } from "../../../lib/helpers";
 
 @Service()
 export class SomeService {
-
-  constructor(private app: Application) {
-    // mongoose.connect('mongodb://admin:admin@ds211440.mlab.com:11440/users');
-  }
-
-  getAll(query) {
-    // return User.find(query);
+  constructor(public configProvider: ConfigProvider) {}
+  getSomeData() {
+    return {
+        data: "from service",
+        configField: this.configProvider.test
+    }
   }
 }

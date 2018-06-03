@@ -23,7 +23,7 @@ import { Controller, Get } from "../../../lib";
 export class UserController {
   
   @Get('/')
-  getSome(args: IRequestArguments) {
+  getSuccess(args: IRequestArguments) {
     return {
         data: "success"
     }
@@ -45,14 +45,18 @@ Expected result fot the GET http://localhost/some
 The application support dependency injection mechanism
 
 ```typescript
+import { Service } from "../../../lib";
+
 @Service()
-class SomeService {
+exrort class SomeService {
   getSomeData() {
     return {
         data: "from service"
     }
   }
 }
+
+export { SomeService }
 ```
 #### Modify your controller
 
@@ -62,14 +66,14 @@ import { Controller, Get } from "../../../lib";
 @Controller('some')
 export class UserController {
   constructor(public someService: SomeService)
-  @Get('/')
-  getSome({ body, params, query, auth }: IRequestArguments) {
+  @Get('/service')
+  getFromService(args: IRequestArguments) {
     return this.someService.getSomeData()
   }
 }
 ```
 
-Expected result fot the GET http://localhost/some
+Expected result fot the GET http://localhost/some/service
 ```json
 {
     "data": "from service"
@@ -86,12 +90,11 @@ import { Controller, Get } from "../../../lib";
 
 @Controller('some')
 export class UserController {
-  constructor(public someService: SomeService)
   @Post('echo/:param')
   echo({ body, params, query }: IRequestArguments) {
     return {
-        body: body.data
-        params: params.param
+        body: body.data,
+        params: params.param,
         query: query.echo
     }
   }
@@ -110,9 +113,8 @@ Expected result fot the POST http://localhost/some/echo/echoParam?echo=echoQuery
 ```json
 {
     "body": "echoBody",
-    "param": "echoParam",
+    "params": "echoParam",
     "query": "echoQuery"
-
 }
 ```
 
@@ -130,18 +132,18 @@ application.useConfig((config) => {
 
 ```typescript
 @Service()
-class SomeService {
-  constructor(public ConfigProvider) {}
-  getSomeData() {
+export class SomeService {
+  constructor(public configProvider: ConfigProvider) {}
+  getTestConfig() {
     return {
         data: "from service",
-        configField: this.config.test
+        configField: this.configProvider.test
     }
   }
 }
 ```
 
-Expected result fot the GET http://localhost/some
+Expected result fot the GET http://localhost/some/service
 ##### Response
 ```json
 {
