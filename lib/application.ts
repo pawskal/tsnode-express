@@ -65,22 +65,24 @@ class Application {
       name: provider.name
     };
     this.authorizationOptions = new AuthOptions();
-    cb(this.authorizationOptions);
+    cb ? cb(this.authorizationOptions) : void 0;
   }
 
   public useConfig(cb: Function) : void {
     const config = {};
-    cb(config);
+    cb ? cb(config) : void 0;
     this.configProvider = new ConfigProvider(config)
     this._injector.setInstance(this.configProvider);
   }
 
   protected health() {
-    arguments[1].json({ status: 'live' })
+    arguments[1].status(200)
+                .json({ status: 'live' })
   }
 
   protected handleNotFound() {
-    arguments[1].status(400).json({ status: 404, message: 'Not Found' })
+    arguments[1].status(400)
+                .json({ statusCode: 404, message: 'Not Found', name: 'NotFoundError' })
   }
 
   protected buildController(definition: IController, name: string) : void {
@@ -93,6 +95,9 @@ class Application {
       .forEach((routes: IRoutes, path: string) =>
         Object.keys(routes).forEach((method: string) => {
           async function handler(req: IRequest, res: IResponse, next: Function) {
+            let finished: boolean = false;
+            res.on('finish', () => finished = true);
+
             const stub = () => {};
 
             const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
@@ -103,13 +108,14 @@ class Application {
               await before.apply(instance, arguments);
               res.result = await origin.call(instance, new RequestArguments(req)) || {};
               await after.apply(instance, arguments);
-              res.send(res.result);
             } catch (e) {
               res.status(e.statusCode || 500).json({
                 status: e.statusCode,
                 message: e.message,
                 type: e.name
               })
+            } finally {
+              process.nextTick(() => finished ? void 0 : res.send(res.result))
             }
           }
 

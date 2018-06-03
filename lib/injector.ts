@@ -1,6 +1,5 @@
 import 'reflect-metadata'
-import { Type, IController, IRoutes, IAuthOption } from './interfaces';
-import { Controller, Service, Authorization, RouteDecorator } from './decorators'
+import { Type, IController, IRoutes, IAuthOption, IAuthRole } from './interfaces';
 
 export default class Injector {
   public static getInstance(): Injector {
@@ -9,26 +8,6 @@ export default class Injector {
 
   private static _instance: Injector;
   
-  public static Controller: Function = Controller.bind(Injector.getInstance());
-
-  public static Service: Function = Service.bind(Injector.getInstance());
-
-  public static Authorization: Function = Authorization.bind(Injector.getInstance());
-
-  public static Get: Function = RouteDecorator.bind(Injector.getInstance(),'origin', 'get');
-
-  public static Post: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'post',);
-
-  public static Put: Function = RouteDecorator.bind(Injector.getInstance(),'origin', 'put');
-
-  public static Patch: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'patch'); 
-
-  public static Delete: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'delete');
-
-  public static Before: Function = RouteDecorator.bind(Injector.getInstance(), 'before');
-
-  public static After: Function = RouteDecorator.bind(Injector.getInstance(), 'after');
-
   private injections: Map<string, Type<any>> = new Map<string, Type<any>>();
 
   private instances: Map<string, any> = new Map<string, any>();
@@ -58,6 +37,33 @@ export default class Injector {
     this.injections.set(target.name, target);
   }
 
+  public AuthorizationDecorator (auth?: IAuthRole) : Function {
+    return (target: Type<any>) : void => {
+      const controller: IController = this.controllers.get(target.name);
+      Object.assign(controller, { auth: true, role: auth && auth.role || 'default' });
+    }
+  }
+  
+  public ControllerDecorator (basePath: string) : Function {
+    return (target) : void => {
+      const controller: IController = this.controllers.get(target.name);
+      Object.assign(controller, { basePath: this.normalizePath(basePath) });
+      this.set(target);
+    }
+  }
+  
+  public ServicDecorator () : Function {
+    return (target: Type<any>) : void => {
+      console.log(target)
+      this.set(target);
+    }
+  } 
+  
+  public RouteDecorator(type: string, method: string, path: string, authOption?: IAuthOption) : Function {
+    return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
+      this.defineRoute(method.toLowerCase(), type, target, path, fname, descriptor, authOption);
+  }
+
   private defineRoute(method: string, type: string, target: Type<any>,
                       defaultPath: string, fname: string, descriptor: PropertyDescriptor, authOption?: IAuthOption) : void {
     if(!this.controllers.has(target.constructor.name)) {
@@ -71,7 +77,7 @@ export default class Injector {
     const controller: IController = this.controllers.get(target.constructor.name)
     const route: IRoutes = controller.routes.get(path) || {};
     
-    let methodDefinition = route[method] || {};
+    const methodDefinition = route[method] || {};
     Object.assign(methodDefinition, {
       auth: authOption && authOption.auth,
       role: authOption && authOption.role,

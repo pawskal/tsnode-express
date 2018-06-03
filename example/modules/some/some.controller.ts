@@ -1,27 +1,14 @@
-import jwt from 'jsonwebtoken';
-
-import { Controller, Get, Authorization, Before, After, Post } from "../../../lib";
+import { Controller, Get, Before, After, Post } from "../../../lib";
 import { IRequestArguments } from '../../../lib/interfaces';
 import { ConfigProvider } from '../../../lib/helpers';
 
 import { SomeService } from './some.service';
 
-// @Authorization({ role: 'super' })
 @Controller('some')
 export class SomeController {
   constructor(public someService: SomeService) {}
 
-  @Before('GET', '/',)
-  beforeGetById(req, res, next) {
-    req.body.before = 'before'
-  }
-
-  @After('GET', '/')
-  AfterGetById(req, res, next) {
-    res.result = Object.assign(res.result, req.body, { after: 'after' })
-  }
-
-  @Get('/', { auth: false })
+  @Get('/')
   getSuccess(data: IRequestArguments) {
     return { data: "success" }
   }
@@ -40,20 +27,30 @@ export class SomeController {
     }
   }
 
-  @Get(':id/data/:uid')
-  getByIdAndID(data: IRequestArguments) {
-    console.log(data)
-    return {}
-    // return this.userService.getData()
+  @Before('GET', '/hooks')
+  beforeWithHooks(req, res, next) {
+    req.body.before = 'before hook'
   }
 
-  @Post('/register', { auth: false })
-  async registerUser({ body }) {
+  @Get('/hooks')
+  withHooks(args: IRequestArguments) {
+    return {
+      origin: 'original method'
+    }
   }
 
+  @After('GET', '/hooks')
+  afterWithHooks(req, res, next) {
+    res.result = Object.assign(req.body, res.result, { after: 'after hook' })
+  }
 
-  @Post('/auth', { auth: false })
-  async authUser({ body }) {
-    // return await jwt.sign({ name: body.name }, this.configProvider.secret);
+  @Before('GET', '/single-before-hook/:param')
+  singleBeforeHook(req, res, next) {
+    res.send({ break: `Before hook catch ${req.params.param} param` })
+  }
+
+  @After('GET', '/single-after-hook/:param')
+  singleAfterHook(req, res, next) {
+    res.send({ break: `After hook catch ${req.params.param} param` })
   }
 }

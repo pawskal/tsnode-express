@@ -2,7 +2,7 @@ import { IAuthMiddleware, IAuthOptions, IRequest, IResponse, IRequestArguments, 
 
 export class AuthOptions implements IAuthOptions {
   public strategy: string = 'jwt';
-  public authorizationHeader: string = 'Authorization';
+  public authorizationHeader: string = 'authorization';
   public authorizationQueryParam: string = 'access_token'
   public authorizationBodyField: string = 'accessToken';
   constructor() {}

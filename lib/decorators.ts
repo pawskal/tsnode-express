@@ -1,30 +1,30 @@
-import { IController, IAuthOption, Type, IAuthRole } from './interfaces';
+import Injector from './injector'
 
-export function Authorization (auth?: IAuthRole) : Function {
-  return (target: Type<any>) : void => {
-    const controller: IController = this.controllers.get(target.name);
-    Object.assign(controller, { auth: true, role: auth && auth.role || 'default' });
-  }
-}
+const injector = Injector.getInstance();
 
-export function Controller (basePath: string) : Function {
-  return (target) : void => {
-    const controller: IController = this.controllers.get(target.name);
-    Object.assign(controller, { basePath: this.normalizePath(basePath) });
-    this.set(target);
-  }
-}
+const { 
+  ControllerDecorator,
+  AuthorizationDecorator,
+  ServicDecorator,
+  RouteDecorator
+} = injector
 
-export function Service () : Function {
-  return (target: Type<any>) : void => {
-    console.log(target)
-    this.set(target);
-  }
-} 
+export const Controller: Function = ControllerDecorator.bind(Injector.getInstance());
 
-export function RouteDecorator(type: string, method: string, path: string, authOption?: IAuthOption) : Function {
-  console.log(arguments)
+export const Service: Function = ServicDecorator.bind(Injector.getInstance());
 
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute(method.toLowerCase(), type, target, path, fname, descriptor, authOption);
-}
+export const Authorization: Function = AuthorizationDecorator.bind(Injector.getInstance());
+
+export const Get: Function = RouteDecorator.bind(Injector.getInstance(),'origin', 'get');
+
+export const Post: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'post',);
+
+export const Put: Function = RouteDecorator.bind(Injector.getInstance(),'origin', 'put');
+
+export const Patch: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'patch'); 
+
+export const Delete: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'delete');
+
+export const Before: Function = RouteDecorator.bind(Injector.getInstance(), 'before');
+
+export const After: Function = RouteDecorator.bind(Injector.getInstance(), 'after');
