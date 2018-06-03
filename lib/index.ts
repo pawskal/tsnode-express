@@ -2,7 +2,7 @@ import Application from './application';
 import Injector from './injector';
 import * as Interfaces from './interfaces';
 
-const { Service,
+import { Service,
         Controller,
         Authorization,
         Get, 
@@ -11,7 +11,7 @@ const { Service,
         Patch, 
         Delete,
         Before,
-        After } = Injector;
+        After } from './decorators';
 
 export { Application,
         Service,
