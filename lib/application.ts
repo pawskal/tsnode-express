@@ -16,7 +16,7 @@ class Application {
 
   private _injector: Injector;
 
-  private express: any;
+  public express: any;
 
   private router: any;
 
@@ -70,6 +70,10 @@ class Application {
     this._injector.setInstance(this.configProvider);
   }
 
+  private health() {
+    arguments[1].json({ status: 'live' })
+  }
+
   private buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
     
@@ -111,6 +115,7 @@ class Application {
       this.authorizationProvider.instance = this._injector.resolve<IAuthMiddleware>(this.authorizationProvider.name);
     }
     this.controllers.forEach(this.buildController.bind(this));
+    this.express.get('/health', this.health)
     cb(this.express);
   }
 }
