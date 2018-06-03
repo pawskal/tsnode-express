@@ -24,14 +24,11 @@
   },
   "homepage": "https://github.com/Pawskal/TSNode#readme",
   "dependencies": {
-    "@types/reflect-metadata": "^0.1.0",
-    "chai": "^4.1.2",
     "express": "^4.16.3",
-    "jsonwebtoken": "^8.2.1",
-    "mocha": "^5.2.0"
+    "jsonwebtoken": "^8.2.1"
   },
   "devDependencies": {
-    "@types/express": "^4.11.1",
+    "@types/reflect-metadata": "^0.1.0",
     "@types/jsonwebtoken": "^7.2.7",
     "@types/node": "^9.4.7",
     "@types/request": "^2.47.0",

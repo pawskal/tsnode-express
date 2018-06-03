@@ -58,7 +58,7 @@ export class AuthMiddleware {
 
     const token = req.headers[authOptions.authorizationHeader.toLowerCase()] ||
                   req.query[authOptions.authorizationQueryParam] ||
-                  req.query[authOptions.authorizationBodyField];
+                  req.body[authOptions.authorizationBodyField];
     if(!token) {
       return res.status(401).send({ message: 'Unauthorized' });
     }
