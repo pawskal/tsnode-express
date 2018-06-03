@@ -22,39 +22,9 @@ export function Service () : Function {
   }
 } 
 
-export function Get(path: string, authOption?: IAuthOption) : Function {
+export function RouteDecorator(type: string, method: string, path: string, authOption?: IAuthOption) : Function {
+  console.log(arguments)
+
   return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute('get', 'origin', target, path, fname, descriptor, authOption);
-}
-
-export function Post (path: string, authOption?: IAuthOption) : Function {
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute('post', 'origin', target, path, fname, descriptor, authOption);
-}
-
-
-export function Put (path: string, authOption?: IAuthOption) : Function {
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute('patch', 'origin', target, path, fname, descriptor, authOption);}
-
-
-export function Patch (path: string, authOption?: IAuthOption) : Function {
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute('patch', 'origin', target, path, fname, descriptor, authOption);
-}
-
-
-export function Delete (path: string, authOption?: IAuthOption) : Function {
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute('delete', 'origin', target, path, fname, descriptor, authOption);
-}
-
-export function Before(path: string, method: string) : Function {
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute(method.toLowerCase(), 'before', target, path, fname, descriptor);
-}
-
-export function After(path: string, method: string) : Function {
-  return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
-    this.defineRoute(method.toLowerCase(), 'after', target, path, fname, descriptor);
+    this.defineRoute(method.toLowerCase(), type, target, path, fname, descriptor, authOption);
 }

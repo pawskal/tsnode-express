@@ -15,6 +15,14 @@ application.start((express) => {
 })
 ```
 
+### Make first request
+Expected result for GET http://localhost/health
+```json
+{
+    "status": "live"
+}
+```
+
 ### Write the controller
 ```typescript
 import { Controller, Get } from "../../../lib";

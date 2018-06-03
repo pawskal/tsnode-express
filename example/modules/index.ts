@@ -1,3 +1,3 @@
-import * as UserModule from './user'
+import * as SomeModule from './some'
 
-export default UserModule
+export default SomeModule

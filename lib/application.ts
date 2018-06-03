@@ -12,42 +12,47 @@ class Application {
     return this._injector;
   }
 
-  private static _instance: Application;
+  protected static _instance: Application;
 
-  private _injector: Injector;
+  protected _injector: Injector;
 
   public express: any;
 
-  private router: any;
+  protected router: any;
 
-  private authorizationProvider : IProviderDefinition<IAuthMiddleware>;
+  protected authorizationProvider : IProviderDefinition<IAuthMiddleware>;
 
-  private enableAthorization: boolean = false;
+  protected enableAthorization: boolean = false;
 
-  private authorizationOptions: AuthOptions;
+  protected authorizationOptions: AuthOptions;
 
-  private configProvider: ConfigProvider;
+  protected configProvider: ConfigProvider;
 
-  private controllers: Map<string, IController>;
+  protected controllers: Map<string, IController>;
   
-  constructor() {
+  constructor(cb?: Function) {
     this.express = express();
-    this.router = Router();
-    
+
+    this.express.use('/health', this.health)
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
+
+    this.router = Router();
+    
     this._injector = Injector.getInstance();
 
     this.controllers = this._injector.controllers;
 
     this._injector.setInstance(this);
 
+    cb ? cb(this.express) : void 0
+
     return Application._instance || (Application._instance = this);
   }
 
   public registerModule(objects: any): void {}
 
-  private authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
+  protected authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
     this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
                                                  this.authorizationOptions, this.controllers) 
                             : next();
@@ -70,11 +75,15 @@ class Application {
     this._injector.setInstance(this.configProvider);
   }
 
-  private health() {
+  protected health() {
     arguments[1].json({ status: 'live' })
   }
 
-  private buildController(definition: IController, name: string) : void {
+  protected handleNotFound() {
+    arguments[1].status(400).json({ status: 404, message: 'Not Found' })
+  }
+
+  protected buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
     
     const { routes, basePath, auth, instance } = definition;
@@ -96,7 +105,11 @@ class Application {
               await after.apply(instance, arguments);
               res.send(res.result);
             } catch (e) {
-              res.status(500).send(e)
+              res.status(e.statusCode || 500).json({
+                status: e.statusCode,
+                message: e.message,
+                type: e.name
+              })
             }
           }
 
@@ -115,7 +128,7 @@ class Application {
       this.authorizationProvider.instance = this._injector.resolve<IAuthMiddleware>(this.authorizationProvider.name);
     }
     this.controllers.forEach(this.buildController.bind(this));
-    this.express.get('/health', this.health)
+    this.express.use(this.handleNotFound);
     cb(this.express);
   }
 }

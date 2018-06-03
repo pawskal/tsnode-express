@@ -19,14 +19,11 @@ test('server should be live', async (t) => {
     
 })
 
-test('server should be live', async (t) => {
-    // t.plan(1)
-    
+test('server should get success', async (t) => {
   try {
-    const res = await request.get('http://localhost:3000/health')
-    console.log(JSON.parse(res))
-    t.equal(JSON.parse(res).status, 'live')
-  
+    const response = await request.get('http://localhost:3000/some')
+    const { data } = JSON.parse(response)
+    t.equal(data, 'success')
   }
   catch(e) {
     console.error(e)
@@ -34,7 +31,39 @@ test('server should be live', async (t) => {
   finally {
     t.end();
   }
-    
+})
+
+test('server should return data from service', async (t) => {
+  try {
+    const response = await request.get('http://localhost:3000/some/service')
+    const { data } = JSON.parse(response)
+    t.equal(data, 'from service')
+  }
+  catch(e) {
+    console.error(e)
+  }
+  finally {
+    t.end();
+  }
+})
+
+test('server should return echo', async (t) => {
+  const expected = {
+    body: 'echoBody',
+    params: 'echoParam',
+    query: 'echoQuery'
+  }
+  try {
+    const response = await request.post('http://localhost:3000/some/echo/echoParam?echo=echoQuery', { form: { data: 'echoBody'}})
+    const real = JSON.parse(response)
+    t.deepEqual(real, expected, 'success')
+  }
+  catch(e) {
+    console.error(e)
+  }
+  finally {
+    t.end();
+  }
 })
 
 test('exit tests', (t) => {

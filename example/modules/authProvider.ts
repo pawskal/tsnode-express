@@ -1,4 +1,4 @@
-import { IAuthMiddleware, IVerifyResponse } from "../../lib/interfaces";
+import { IAuthMiddleware, IVerifyResponse, IAuthRole } from "../../lib/interfaces";
 import { ConfigProvider } from "../../lib/helpers";
 
 
@@ -8,7 +8,7 @@ export class AuthProvider implements IAuthMiddleware {
 
     }
 
-    verify(data: any, authTarget): IVerifyResponse {
+    verify(data: any, authTarget: IAuthRole): IVerifyResponse {
         console.log(authTarget)
         return {
             success: data.name == 'pawskal',

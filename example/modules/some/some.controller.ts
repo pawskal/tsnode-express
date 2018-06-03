@@ -11,17 +11,15 @@ import { SomeService } from './some.service';
 export class SomeController {
   constructor(public someService: SomeService) {}
 
-  // @Before(':id', 'GET')
-  // beforeGetById(req, res, next) {
-  //   console.log('BEFORE @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-  //   req.body.custom = 'custom data afrer before'
-  // }
+  @Before('GET', '/',)
+  beforeGetById(req, res, next) {
+    req.body.before = 'before'
+  }
 
-  // @After(':id', 'GET')
-  // AfterGetById(req, res, next) {
-  //   res.result = Object.assign(res.result, req.body)
-  //   console.log('After %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
-  // }
+  @After('GET', '/')
+  AfterGetById(req, res, next) {
+    res.result = Object.assign(res.result, req.body, { after: 'after' })
+  }
 
   @Get('/', { auth: false })
   getSuccess(data: IRequestArguments) {

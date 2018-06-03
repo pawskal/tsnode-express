@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { Type, IController, IRoutes, IAuthOption } from './interfaces';
-import { Controller, Service, Authorization, Get, Post, Patch, Put, Delete, Before, After } from './decorators'
+import { Controller, Service, Authorization, RouteDecorator } from './decorators'
 
 export default class Injector {
   public static getInstance(): Injector {
@@ -15,19 +15,19 @@ export default class Injector {
 
   public static Authorization: Function = Authorization.bind(Injector.getInstance());
 
-  public static Get: Function = Get.bind(Injector.getInstance());
+  public static Get: Function = RouteDecorator.bind(Injector.getInstance(),'origin', 'get');
 
-  public static Post: Function = Post.bind(Injector.getInstance());
+  public static Post: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'post',);
 
-  public static Put: Function = Put.bind(Injector.getInstance());
+  public static Put: Function = RouteDecorator.bind(Injector.getInstance(),'origin', 'put');
 
-  public static Patch: Function = Patch.bind(Injector.getInstance()); 
+  public static Patch: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'patch'); 
 
-  public static Delete: Function = Delete.bind(Injector.getInstance());
+  public static Delete: Function = RouteDecorator.bind(Injector.getInstance(), 'origin', 'delete');
 
-  public static Before: Function = Before.bind(Injector.getInstance());
+  public static Before: Function = RouteDecorator.bind(Injector.getInstance(), 'before');
 
-  public static After: Function = After.bind(Injector.getInstance());
+  public static After: Function = RouteDecorator.bind(Injector.getInstance(), 'after');
 
   private injections: Map<string, Type<any>> = new Map<string, Type<any>>();
 
