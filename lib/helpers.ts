@@ -1,4 +1,4 @@
-import { IAuthMiddleware, IAuthOptions, IRequest, IResponse, IRequestArguments, IAuthTarget } from "./interfaces";
+import { IAuthOptions, IRequest, IRequestArguments, IAuthTarget } from "./interfaces";
 
 export class AuthOptions implements IAuthOptions {
   public strategy: string = 'jwt';
@@ -37,7 +37,7 @@ export class AuthTarget implements IAuthTarget {
   public role: string;
   public roles: Array<string>;
   public fullPath: string;
-  constructor({ controller, method, basePath, path, functionName, roles } : IAuthTarget) {
+  constructor({ basePath, path } : IAuthTarget) {
     Object.assign(this, arguments[0]);
     this.fullPath = `${basePath}${path}`
   }

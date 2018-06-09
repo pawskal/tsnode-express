@@ -3,7 +3,7 @@ import Router from 'express';
 import bodyParser from 'body-parser';
 import Injector from './injector';
 import { IController, IAuthOptions, Type, IAuthMiddleware, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
-import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
+import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
 import { AuthMiddleware } from './authMiddleware';
 
 class Application {

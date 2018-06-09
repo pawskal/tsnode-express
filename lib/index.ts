@@ -1,5 +1,4 @@
 import Application from './application';
-import Injector from './injector';
 
 import {
   Service,
@@ -15,7 +14,6 @@ import {
 } from './decorators';
 
 import {
-  IProviderDefinition,
   IAuthMiddleware,
   IAuthOptions,
   IAuthTarget,

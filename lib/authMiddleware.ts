@@ -1,12 +1,13 @@
 import jwt from 'jsonwebtoken';
 
-import { IAuthMiddleware,
-         IAuthOptions,
-         IRequest, 
-         IResponse, 
-         IAuthTarget, 
-         IController, 
-         IRoutes } from './interfaces';
+import { 
+  IAuthMiddleware,
+  IAuthOptions,
+  IRequest, 
+  IResponse, 
+  IController, 
+  IRoutes
+} from './interfaces';
 
 import { AuthTarget } from './helpers';
 
@@ -22,13 +23,13 @@ export class AuthMiddleware {
     let roles = [];
 
     controllers.forEach((controller: IController, name: string) => {
-        if(controller.basePath == req.baseUrl) {
-            controllerName = name;
-            controllerBasePath = controller.basePath;
-            role = controller.role;
-            roles = [...[role],
-                     ...controller.roles || []]
-        }
+      if(controller.basePath == req.baseUrl) {
+        controllerName = name;
+        controllerBasePath = controller.basePath;
+        role = controller.role;
+        roles = [...[role],
+                 ...controller.roles || []]
+      }
     });
 
     const controller: IController = controllers.get(controllerName)
@@ -43,17 +44,17 @@ export class AuthMiddleware {
     const methodDefinition = controller.routes.get(routePath)
 
     const authTarget = new AuthTarget({
-        controller: controllerName,
-        method: methodName,
-        basePath: controllerBasePath,
-        path: routePath,
-        functionName: methodDefinition[methodName].origin && methodDefinition[methodName].origin.name ||
-                      methodDefinition[methodName].before && methodDefinition[methodName].before.name ||
-                      methodDefinition[methodName].after && methodDefinition[methodName].after.name,
-        role:  methodDefinition[methodName].role || role,
-        roles: [...[methodDefinition[methodName].role],
-                ...methodDefinition[methodName].roles || [],
-                ...roles].filter((role) => role),
+      controller: controllerName,
+      method: methodName,
+      basePath: controllerBasePath,
+      path: routePath,
+      functionName: methodDefinition[methodName].origin && methodDefinition[methodName].origin.name ||
+                    methodDefinition[methodName].before && methodDefinition[methodName].before.name ||
+                    methodDefinition[methodName].after && methodDefinition[methodName].after.name,
+      role:  methodDefinition[methodName].role || role,
+      roles: [...[methodDefinition[methodName].role],
+              ...methodDefinition[methodName].roles || [],
+              ...roles].filter((role) => role),
     });
 
     const token = req.headers[authOptions.authorizationHeader.toLowerCase()] ||

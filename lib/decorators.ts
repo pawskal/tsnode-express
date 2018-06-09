@@ -1,13 +1,11 @@
 import Injector from './injector'
 
-const injector = Injector.getInstance();
-
 const { 
   ControllerDecorator,
   AuthorizationDecorator,
   ServicDecorator,
   RouteDecorator
-} = injector
+} = Injector.getInstance();
 
 export const Controller: Function = ControllerDecorator.bind(Injector.getInstance());
 
