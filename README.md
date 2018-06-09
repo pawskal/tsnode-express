@@ -1,10 +1,15 @@
 ## README
 
+### Download package
+```
+npm install tsnode-express --save
+```
+
 ### Start application
 
 ``` typescript
 import http from 'http';
-import Application from '../lib/application';
+import { Application } from 'tsnode-express';
 
 const app = new Application()
 
@@ -16,24 +21,25 @@ application.start((express) => {
 ```
 
 ### Make first request
-Expected result for GET http://localhost/health
+Expected result for GET http://localhost:3000/health
 ```json
 {
-    "status": "live"
+  "status": "live"
 }
 ```
 
-### Write the controller
+### Write the Controller
+##### Note: all classes should had written before appplication.start() had called
+
 ```typescript
-import { Controller, Get } from "../../../lib";
+import { Controller, Get } from "tsnode-express";
 
 @Controller('some')
-export class UserController {
-  
+class SomeController {
   @Get('/')
   getSuccess(args: IRequestArguments) {
     return {
-        data: "success"
+      data: "success"
     }
   }
 }
@@ -42,10 +48,10 @@ export class UserController {
 #### The "Controller" decorator accepts as argument base path to route
 #### The "Get" decorator accepts as agrument additional path to route
 
-Expected result fot the GET http://localhost/some
+Expected result fot the GET http://localhost:3000/some
 ```json
 {
-    "data": "success"
+  "data": "success"
 }
 ```
 
@@ -53,26 +59,24 @@ Expected result fot the GET http://localhost/some
 The application support dependency injection mechanism
 
 ```typescript
-import { Service } from "../../../lib";
+import { Service } from "tsnode-express";
 
 @Service()
-exrort class SomeService {
+class SomeService {
   getSomeData() {
     return {
-        data: "from service"
+      data: "from service"
     }
   }
 }
-
-export { SomeService }
 ```
 #### Modify your controller
 
 ```typescript
-import { Controller, Get } from "../../../lib";
+import { Controller, Get } from "tsnode-express";
 
 @Controller('some')
-export class UserController {
+class SomeController {
   constructor(public someService: SomeService)
   @Get('/service')
   getFromService(args: IRequestArguments) {
@@ -81,7 +85,7 @@ export class UserController {
 }
 ```
 
-Expected result fot the GET http://localhost/some/service
+Expected result fot the GET http://localhost:3000/some/service
 ```json
 {
     "data": "from service"
@@ -104,67 +108,69 @@ application.useConfig((config) => {
 #### Modify your service or controller
 
 ```typescript
+import { Service, ConfigProvider } from "tsnode-express";
+
 @Service()
-export class SomeService {
+class SomeService {
   constructor(public configProvider: ConfigProvider) {}
   getTestConfig() {
     return {
-        data: "from service",
-        configField: this.configProvider.test
+      data: "from service",
+      configField: this.configProvider.test
     }
   }
 }
 ```
 
-Expected result fot the GET http://localhost/some/service
+Expected result fot the GET http://localhost:3000/some/service
 ##### Response
 ```json
 {
-    "data": "from service",
-    "configField": "test config field"
+  "data": "from service",
+  "configField": "test config field"
 }
 ```
 
 ### Working with request params and request query
 
 ```typescript
-import { Controller, Get } from "../../../lib";
+import { Controller, Post } from "tsnode-express";
 
 @Controller('some')
-export class UserController {
+class SomeController {
   @Post('echo/:param')
   echo({ body, params, query }: IRequestArguments) {
     return {
-        body: body.data,
-        params: params.param,
-        query: query.echo
+      body: body.data,
+      params: params.param,
+      query: query.echo
     }
   }
 }
 ```
 
-Expected result fot the POST http://localhost/some/echo/echoParam?echo=echoQuery
+Expected result fot the POST http://localhost:3000/some/echo/echoParam?echo=echoQuery
 ##### Request
 ```json
 {
-    "data": "echoBody"
+  "data": "echoBody"
 }
 ```
 
 ##### Response
 ```json
 {
-    "body": "echoBody",
-    "params": "echoParam",
-    "query": "echoQuery"
+  "body": "echoBody",
+  "params": "echoParam",
+  "query": "echoQuery"
 }
 ```
 
 ### Use reuest`s Before and After hooks
 #### Add hooks and route function to the controller
 ```typescript
-@Before('GET', '/hooks',)
-beforeWithHooks(req, res, next) {
+@Before('GET', '/hooks')
+beforeWithHooks(req: IRequest, res: IResponse, next: Function) {
   req.body.before = 'before hook'
 }
 
@@ -176,18 +182,18 @@ withHooks(args: IRequestArguments) {
 }
 
 @After('GET', '/hooks')
-afterWithHooks(req, res, next) {
+afterWithHooks(req: IRequest, res: IResponse, next: Function) {
   res.result = Object.assign(req.body, res.result, { after: 'after hook' })
 }
 ```
 
-Expected result fot the GET http://localhost/some/hooks
+Expected result fot the GET http://localhost:3000/some/hooks
 ##### Response
 ```json
 {
-    "before": "before hook",
-    "origin": "original method",
-    "after": "after hook"
+  "before": "before hook",
+  "origin": "original method",
+  "after": "after hook"
 }
 ```
 
@@ -199,12 +205,12 @@ or do with request something else
 #### Example single hooks
 ```typescript
  @Before('GET', '/single-before-hook/:param')
-singleBeforeHook(req, res, next) {
+singleBeforeHook(req: IRequest, res: IResponse, next: Function) {
   res.send({ break: `Before hook catch ${req.params.param} param` })
 }
 ```
 
-Expected result fot the GET http://localhost:3000/some/single-before-hook/someParam
+Expected result fot the GET http://localhost:3000:3000/some/single-before-hook/someParam
 ##### Response
 ```json
 {
@@ -214,12 +220,12 @@ Expected result fot the GET http://localhost:3000/some/single-before-hook/somePa
 
 ```typescript
 @After('GET', '/single-after-hook/:param')
-singleAfterHook(req, res, next) {
+singleAfterHook(req: IRequest, res: IResponse, next: Function) {
   res.send({ break: `After hook catch ${req.params.param} param` })
 }
 ```
 
-Expected result fot the GET http://localhost:3000/some/single-after-hook/someParam
+Expected result fot the GET http://localhost:3000:3000/some/single-after-hook/someParam
 ##### Response
 ```json
 {
@@ -233,20 +239,17 @@ Expected result fot the GET http://localhost:3000/some/single-after-hook/somePar
 #### Write authorization provider
 
 ```typescript
-import { IAuthMiddleware, IVerifyResponse, IAuthRole } from "../../lib/interfaces";
-import { ConfigProvider } from "../../lib/helpers";
+import { IAuthMiddleware, IVerifyResponse, IAuthTarget } from "tsnode-express";
+import { ConfigProvider } from "tsnode-express";
 
 @Reflect.metadata('design', 'paramtypes')
-export class AuthProvider implements IAuthMiddleware {
-    constructor(config: ConfigProvider) {}
-
-    verify(data: any, authTarget: IAuthRole): IVerifyResponse {
-        console.log(authTarget)
-        return {
-            success: data.name == 'pawskal',
-            data
-        };
-    }
+class AuthProvider implements IAuthMiddleware {
+  verify(data: any, authTarget: IAuthTarget): IVerifyResponse {
+    return {
+      success: data.name == 'JDoe',
+      data
+    };
+  }
 }
 ```
 

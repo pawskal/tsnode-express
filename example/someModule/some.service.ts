@@ -6,8 +6,8 @@ export class SomeService {
   constructor(public configProvider: ConfigProvider) {}
   getSomeData() {
     return {
-        data: "from service",
-        configField: this.configProvider.test
+      data: "from service",
+      configField: this.configProvider.test
     }
   }
 }
