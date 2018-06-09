@@ -2,33 +2,54 @@
   "name": "tsnode-express",
   "version": "0.0.1",
   "description": "nodejs express typescript",
-  "main": "./lib/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "start": "npm run build:live",
-    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
-    "test": "./node_modules/.bin/ts-node -- ./test/test.ts"
+    "start": "./node_modules/.bin/ts-node -- ./example/index.ts",
+    "dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
+    "test": "./node_modules/.bin/ts-node -- ./test/test.ts",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Pawskal/TSNode.git"
+    "url": "git+https://github.com/pawskal/tsnode-express.git"
   },
   "keywords": [
     "nodejs",
+    "node-js",
+    "express",
     "typescript",
-    "express"
+    "type-script",
+    "decorators",
+    "decorator",
+    "IOC",
+    "ioc",
+    "DI",
+    "di",
+    "dependency-injection",
+    "dependency-injections",
+    "dependency injection",
+    "dependency injections",
+    "Dependency Injection",
+    "Dependency Injections"
   ],
-  "author": "pawskal",
+  "author": "pavel.ivanov <ipawskal@gmail.com> (https://github.com/pawskal)",
+  "contributors": [
+    "BakridLigaz <ligaz2403@yandex.ru>",
+    "Sergiy <lyshchenko.sergiy@gmail.com>"
+  ],
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Pawskal/TSNode/issues"
+    "url": "https://github.com/pawskal/tsnode-express.git/issues"
   },
-  "homepage": "https://github.com/Pawskal/TSNode#readme",
+  "homepage": "https://github.com/pawskal/tsnode-express#readme",
   "dependencies": {
     "express": "^4.16.3",
     "jsonwebtoken": "^8.2.1"
   },
   "devDependencies": {
     "@types/reflect-metadata": "^0.1.0",
+    "@types/express": "^4.16.0",
     "@types/jsonwebtoken": "^7.2.7",
     "@types/node": "^9.4.7",
     "@types/request": "^2.47.0",

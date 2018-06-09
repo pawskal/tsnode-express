@@ -1,10 +1,9 @@
 import http from 'http';
 
-import Application from '../lib/application';
+import { Application, IAuthOptions } from 'tsnode-express';
 
-import * as SomeModule from './modules';
-import { IAuthOptions } from '../lib/interfaces';
-import { AuthProvider } from './modules/authProvider';
+import * as SomeModule from './someModule';
+import { AuthProvider } from './authProvider';
 
 const application = new Application((express) => {
   express.use((req, res, next) => {
