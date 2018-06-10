@@ -1,6 +1,5 @@
-import { Controller, Get, Before, After, Post } from "../../../lib";
-import { IRequestArguments } from '../../../lib/interfaces';
-import { ConfigProvider } from '../../../lib/helpers';
+import { Controller, Get, Before, After, Post, IRequest, IResponse } from "tsnode-express";
+import { IRequestArguments } from 'tsnode-express';
 
 import { SomeService } from './some.service';
 
@@ -9,7 +8,7 @@ export class SomeController {
   constructor(public someService: SomeService) {}
 
   @Get('/')
-  getSuccess(data: IRequestArguments) {
+  getSuccess(args: IRequestArguments) {
     return { data: "success" }
   }
 
@@ -21,14 +20,14 @@ export class SomeController {
   @Post('echo/:param')
   echo({ body, params, query }: IRequestArguments) {
     return {
-        body: body.data,
-        params: params.param,
-        query: query.echo
+      body: body.data,
+      params: params.param,
+      query: query.echo
     }
   }
 
   @Before('GET', '/hooks')
-  beforeWithHooks(req, res, next) {
+  beforeWithHooks(req: IRequest, res: IResponse, next: Function) {
     req.body.before = 'before hook'
   }
 
@@ -40,17 +39,17 @@ export class SomeController {
   }
 
   @After('GET', '/hooks')
-  afterWithHooks(req, res, next) {
+  afterWithHooks(req: IRequest, res: IResponse, next: Function) {
     res.result = Object.assign(req.body, res.result, { after: 'after hook' })
   }
 
   @Before('GET', '/single-before-hook/:param')
-  singleBeforeHook(req, res, next) {
+  singleBeforeHook(req: IRequest, res: IResponse, next: Function) {
     res.send({ break: `Before hook catch ${req.params.param} param` })
   }
 
   @After('GET', '/single-after-hook/:param')
-  singleAfterHook(req, res, next) {
+  singleAfterHook(req: IRequest, res: IResponse, next: Function) {
     res.send({ break: `After hook catch ${req.params.param} param` })
   }
 }

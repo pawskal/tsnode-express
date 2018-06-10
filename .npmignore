@@ -1,6 +1,9 @@
 .idea
 .vscode
+.gitignore
 package-lock.json
 yarn.lock
 node_modules
-dist
+example
+lib
+test
