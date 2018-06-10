@@ -7,7 +7,7 @@
   "scripts": {
     "start": "./node_modules/.bin/ts-node -- ./example/index.ts",
     "dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
-    "test": "./node_modules/.bin/ts-node -- ./test/test.ts",
+    "test": "./node_modules/.bin/ts-node -- ./test/test.ts | tap-spec",
     "build": "tsc"
   },
   "repository": {
@@ -49,20 +49,21 @@
   },
   "homepage": "https://github.com/pawskal/tsnode-express#readme",
   "dependencies": {
-    "express": "^4.16.3",
-    "jsonwebtoken": "^8.2.1"
+    "express": "^4.16.3"
   },
   "devDependencies": {
-    "@types/reflect-metadata": "^0.1.0",
     "@types/express": "^4.16.0",
     "@types/jsonwebtoken": "^7.2.7",
     "@types/node": "^9.4.7",
+    "@types/reflect-metadata": "^0.1.0",
     "@types/request": "^2.47.0",
     "@types/request-promise-native": "^1.0.14",
     "@types/tape": "^4.2.32",
+    "jsonwebtoken": "^8.2.1",
     "nodemon": "^1.17.1",
     "request": "^2.87.0",
     "request-promise-native": "^1.0.5",
+    "tap-spec": "^5.0.0",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
     "typescript": "^2.7.2"

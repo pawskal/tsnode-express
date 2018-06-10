@@ -14,12 +14,8 @@ test('server should be live', async (t) => {
     const { status } = await request.get('http://localhost:3000/health', options);
     t.equal(status, 'live', 'status should be live');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('server should return 404', async (t) => {
@@ -35,9 +31,7 @@ test('server should return 404', async (t) => {
     t.ok(error);
     t.deepEqual(error, expected, 'Should be Not Found Error')
   }
-  finally {
-    t.end();
-  }
+  finally { t.end(); }
 })
 
 test('server should get success', async (t) => {
@@ -45,12 +39,8 @@ test('server should get success', async (t) => {
     const { data } = await request.get('http://localhost:3000/some', options);
     t.equal(data, 'success', 'data should be success');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('server should return data from service', async (t) => {
@@ -58,12 +48,8 @@ test('server should return data from service', async (t) => {
     const { data } = await request.get('http://localhost:3000/some/service', options);
     t.equal(data, 'from service', 'data sould be from service');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('server should return data from service with config field', async (t) => {
@@ -71,12 +57,8 @@ test('server should return data from service with config field', async (t) => {
     const { configField } = await request.get('http://localhost:3000/some/service', options);
     t.equal(configField, 'test config field', 'data sould be from config provider');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('server should return echo', async (t) => {
@@ -93,12 +75,8 @@ test('server should return echo', async (t) => {
                                          Object.assign({}, options, { form }));
     t.deepEqual(response, expected, 'should collect expected echo fields');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('Hooks should works', async (t) => {
@@ -111,12 +89,8 @@ test('Hooks should works', async (t) => {
     const response = await request.get('http://localhost:3000/some/hooks', options);
     t.deepEqual(response, expected, 'should collect expected hook fields');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('Single before hook should works', async (t) => {
@@ -127,12 +101,8 @@ test('Single before hook should works', async (t) => {
     const response = await request.get('http://localhost:3000/some/single-before-hook/someParam', options);
     t.deepEqual(response, expected, 'should collect expected before hook fields');
   }
-  catch(e) {
-    t.ifErr(e);
-  }
-  finally {
-    t.end();
-  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('Single after hook should works', async (t) => {
@@ -143,12 +113,136 @@ test('Single after hook should works', async (t) => {
     const response = await request.get('http://localhost:3000/some/single-after-hook/someParam', options);
     t.deepEqual(response, expected, 'should collect expected after hook fields');
   }
-  catch(e) {
-    t.ifErr(e);
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
+})
+
+test('Should return unauthorized', async (t) => {
+  const expected = {
+    status: 401,
+    message: 'Unauthorized',
+    name: 'AuthorizationError'
   }
-  finally {
-    t.end();
+  try {
+    await request.post('http://localhost:3000/auth', options);
   }
+  catch({ error }) {
+    t.ok(error);
+    t.deepEqual(error, expected, 'Should be Authorization Error')
+  }
+  finally { t.end(); }
+})
+
+test('Should return auth token for John Doe', async (t) => {
+  try {
+    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=John Doe&password=qwerty9', options);
+    t.ok(token, 'should exist token');
+  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
+})
+
+test('Should return auth token for Jane Doe', async (t) => {
+  try {
+    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    t.ok(token, 'should exist token');
+  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
+})
+
+test('Should add new user with John Doe token', async (t) => {
+  const expected = {
+    name: 'JohnDoe`sUser',
+    role: 'default',
+  }
+  try {
+    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=John Doe&password=qwerty9', options);
+    const headers = {
+      'authorization': token
+    }
+    const { success } = await request.post('http://localhost:3000/auth?name=JohnDoe`sUser&password=test&role=default',
+                                            Object.assign({}, options, { headers }));
+
+    const data = await request.get('http://localhost:3000/auth/JohnDoe`sUser', Object.assign({}, options, { headers }))
+    t.ok(token, 'should exist token');
+    t.true(success, 'success add user')
+    t.deepEqual(data, expected, 'Should get JohnDoe`sUser')
+  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
+})
+
+test('Should return Jane`s Doe user on /me', async (t) => {
+  const expected = {
+    name: 'JaneDoe`sUser',
+    role: 'default',
+  }
+  try {
+    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const headers = {
+      'authorization': token
+    }
+    const { success } = await request.post('http://localhost:3000/auth?name=JaneDoe`sUser&password=test&role=default',
+                                            Object.assign({}, options, { headers }));
+
+    const data = await request.get('http://localhost:3000/auth/sign-in?name=JaneDoe`sUser&password=test', options);
+    headers['authorization'] = data.token
+    const user = await request.get('http://localhost:3000/auth/me', Object.assign({}, options, { headers }));
+    t.ok(token, 'should exist token');
+    t.true(success, 'success add user')
+    t.deepEqual(user, expected, 'Should get JaneDoe`sUser')
+  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
+})
+
+test('Should return Forbidden Error', async (t) => {
+  const expected = {
+    status: 403,
+    message: 'Forbidden access for /auth/:name',
+    name: 'Error'
+  }
+  try {
+    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const headers = {
+      'authorization': token
+    }
+    await request.post('http://localhost:3000/auth?name=test&password=test&role=test',
+                                            Object.assign({}, options, { headers }));
+
+    const data = await request.get('http://localhost:3000/auth/sign-in?name=test&password=test', options);
+    headers['authorization'] = data.token
+    await request.get('http://localhost:3000/auth/Jane Doe', Object.assign({}, options, { headers }));
+  }
+  catch({ error }) {
+    t.ok(error);
+    t.deepEqual(error, expected, 'Should be Forbidden Error')
+  }
+  finally { t.end(); }
+})
+
+test('Should return list users', async (t) => {
+  const expected = [
+    { name: 'John Doe', role: 'super' },
+    { name: 'Jane Doe', role: 'admin' },
+    { name: 'JohnDoe`sUser', role: 'default' },
+    { name: 'JaneDoe`sUser', role: 'default' },
+    { name: 'test', role: 'test' }
+  ]
+  try {
+    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const headers = {
+      'authorization': token
+    }
+    const data = await request.get('http://localhost:3000/auth',
+                                            Object.assign({}, options, { headers }));
+
+    t.ok(token, 'should exist token');
+    t.deepEqual(data, expected, 'Should get users')
+  }
+  catch(e) { t.ifErr(e); }
+  finally { t.end(); }
 })
 
 test('exit tests', (t) => {
