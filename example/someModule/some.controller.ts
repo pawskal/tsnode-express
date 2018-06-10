@@ -1,6 +1,5 @@
 import { Controller, Get, Before, After, Post, IRequest, IResponse } from "tsnode-express";
 import { IRequestArguments } from 'tsnode-express';
-import { ConfigProvider } from 'tsnode-express';
 
 import { SomeService } from './some.service';
 

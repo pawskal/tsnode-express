@@ -60,15 +60,23 @@ export class AuthMiddleware {
                   req.query[authOptions.authorizationQueryParam] ||
                   req.body[authOptions.authorizationBodyField];
     if(!token) {
-      return res.status(401).send({ message: 'Unauthorized' });
+      return res.status(401).json({
+        status: 401,
+        message: 'Unauthorized',
+        name: 'AuthorizationError'
+      });
     }
 
-    const { success, data } = authProvider.verify(token, authTarget);
-    if(!success) {
-      return res.status(403).send({ message: 'Forbidden' });
+    try {
+      req.auth = authProvider.verify(token, authTarget);
+      next();
+    } catch (e) {
+      res.status(e.statusCode || 403).json({
+        status: e.statusCode || 403,
+        message: e.message || 'Forbidden',
+        name: e.name
+      });
     }
-    req.auth = data;
-    next();
   }
 }
   

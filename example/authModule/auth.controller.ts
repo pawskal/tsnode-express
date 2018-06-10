@@ -7,7 +7,7 @@ import { Controller, Authorization, IRequestArguments, Get, Post, ConfigProvider
 export class AuthController {
   constructor(public authService: AuthService, public config: ConfigProvider) {}
 
-  @Post('/', { role: 'super' })
+  @Post('/')
   addUser({ query }: IRequestArguments) {
     if(!query.name || !query.password) {
       throw new Error('Bad Request');
@@ -16,17 +16,17 @@ export class AuthController {
     return { success: true };
   }
  
-  @Get('/', { role: 'admin' })
+  @Get('/')
   getUsers() {
     return this.authService.getUsers();
   }
 
-  @Get(':name', { role: 'admin' })
+  @Get(':name')
   getUser({ params }: IRequestArguments) {
     return this.authService.getUser(params.name);
   }
 
-  @Get('me')
+  @Get('me', { role: 'default' })
   me({ auth }: IRequestArguments) {
     return this.authService.getUser(auth.name);
   }

@@ -21,7 +21,6 @@ import {
   IRequest,
   IResponse,
   IRequestArguments,
-  IVerifyResponse
 } from './interfaces';
 
 export type IAuthProvider = IAuthProvider;
@@ -30,7 +29,6 @@ export type IAuthTarget = IAuthTarget;
 export type IRequest = IRequest;
 export type IResponse = IResponse;
 export type IRequestArguments = IRequestArguments;
-export type IVerifyResponse = IVerifyResponse;
 
 export {
   Application,
