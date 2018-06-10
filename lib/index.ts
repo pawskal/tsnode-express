@@ -1,4 +1,5 @@
 import Application from './application';
+import { ConfigProvider } from './helpers'
 
 import {
   Service,
@@ -14,7 +15,7 @@ import {
 } from './decorators';
 
 import {
-  IAuthMiddleware,
+  IAuthProvider,
   IAuthOptions,
   IAuthTarget,
   IRequest,
@@ -23,9 +24,7 @@ import {
   IVerifyResponse
 } from './interfaces';
 
-import { ConfigProvider } from './helpers'
-
-export type IAuthMiddleware = IAuthMiddleware;
+export type IAuthProvider = IAuthProvider;
 export type IAuthOptions = IAuthOptions;
 export type IAuthTarget = IAuthTarget;
 export type IRequest = IRequest;

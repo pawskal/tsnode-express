@@ -1,7 +1,6 @@
 import { IAuthOptions, IRequest, IRequestArguments, IAuthTarget } from "./interfaces";
 
 export class AuthOptions implements IAuthOptions {
-  public strategy: string = 'jwt';
   public authorizationHeader: string = 'authorization';
   public authorizationQueryParam: string = 'access_token'
   public authorizationBodyField: string = 'accessToken';

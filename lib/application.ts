@@ -2,7 +2,7 @@ import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
 import Injector from './injector';
-import { IController, IAuthOptions, Type, IAuthMiddleware, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
+import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
 import { AuthMiddleware } from './authMiddleware';
 
@@ -20,7 +20,7 @@ class Application {
 
   protected router: any;
 
-  protected authorizationProvider : IProviderDefinition<IAuthMiddleware>;
+  protected authorizationProvider : IProviderDefinition<IAuthProvider>;
 
   protected enableAthorization: boolean = false;
 
@@ -50,15 +50,23 @@ class Application {
     return Application._instance || (Application._instance = this);
   }
 
-  public registerModule(objects: any): void {}
+  public registerModule(...args): void {}
 
   protected authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
-    this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
-                                                 this.authorizationOptions, this.controllers) 
-                            : next();
+    try {
+      this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
+                                                   this.authorizationOptions, this.controllers) 
+                              : next();
+    } catch (e) {
+      res.status(e.statusCode || 500).json({
+        status: e.statusCode || 500,
+        message: e.message,
+        name: e.name
+      })
+    }
   }
 
-  public useAuthorizationProvider<T>(provider: Type<T>, cb: Function) : void {
+  public useAuthorizationProvider<T>(provider: Type<T>, cb?: Function) : void {
     this.enableAthorization = true;
     this._injector.set(provider);
     this.authorizationProvider = {
@@ -88,13 +96,14 @@ class Application {
   protected buildController(definition: IController, name: string) : void {
     definition.instance = Application._instance.Injector.resolve<any>(name);
     
+    const router = Router();
     const { routes, basePath, auth, instance } = definition;
 
     new Map<string, IRoutes>([...routes.entries()]
       .sort(([path]: Array<any>) => path.startsWith('/:') ? 1 : -1))
       .forEach((routes: IRoutes, path: string) =>
         Object.keys(routes).forEach((method: string) => {
-          async function handler(req: IRequest, res: IResponse, next: Function) {
+          async function handler(req: IRequest, res: IResponse) {
             let finished: boolean = false;
             res.on('finish', () => finished = true);
 
@@ -110,9 +119,9 @@ class Application {
               await after.apply(instance, arguments);
             } catch (e) {
               res.status(e.statusCode || 500).json({
-                status: e.statusCode,
+                status: e.statusCode || 500,
                 message: e.message,
-                type: e.name
+                name: e.name
               })
             } finally {
               process.nextTick(() => finished ? void 0 : res.send(res.result))
@@ -124,14 +133,14 @@ class Application {
           const authMiddleware = routes[method].auth ?
                                  this.authMiddleware.bind(this) :
                                  function () { arguments[2].call() };
-          console.log(method, basePath, path)
-          this.express.use(basePath, this.router[method](path, authMiddleware, handler));
+          console.log(method.toUpperCase(), `${basePath}${path}`)
+          this.express.use(basePath, router[method](path, authMiddleware, handler));
         }));
   }
 
   public start(cb: Function) : void {
     if(this.authorizationProvider) {
-      this.authorizationProvider.instance = this._injector.resolve<IAuthMiddleware>(this.authorizationProvider.name);
+      this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
     }
     this.controllers.forEach(this.buildController.bind(this));
     this.express.use(this.handleNotFound);

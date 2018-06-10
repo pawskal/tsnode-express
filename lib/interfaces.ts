@@ -13,16 +13,14 @@ export interface IRequest extends Request {
   auth?: any;
 }
 
-export interface IAuthMiddleware {
-  verify(data: any, authTarget: IAuthTarget): IVerifyResponse;
+export interface IAuthProvider {
+  verify(token: string, authTarget: IAuthTarget): IVerifyResponse;
 }
 
 export interface IAuthOptions {
   authorizationHeader?: string;
   authorizationQueryParam?: string;
   authorizationBodyField?: string;
-  strategy?: string;
-  secret?: string;
 }
 
 export interface IVerifyResponse {

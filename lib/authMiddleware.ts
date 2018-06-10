@@ -1,9 +1,7 @@
-import jwt from 'jsonwebtoken';
-
 import { 
-  IAuthMiddleware,
+  IAuthProvider,
   IAuthOptions,
-  IRequest, 
+  IRequest,
   IResponse, 
   IController, 
   IRoutes
@@ -12,14 +10,14 @@ import {
 import { AuthTarget } from './helpers';
 
 export class AuthMiddleware {
-  constructor(req: IRequest, res: IResponse, next: Function, authProvider: IAuthMiddleware,
+  constructor(req: IRequest, res: IResponse, next: Function, authProvider: IAuthProvider,
               authOptions: IAuthOptions, controllers: Map<string, IController>) {
 
     let controllerName: string;
     let controllerBasePath: string;
     let routePath: string;
     let methodName: string;
-    let role = 'default';
+    let role;
     let roles = [];
 
     controllers.forEach((controller: IController, name: string) => {
@@ -54,7 +52,8 @@ export class AuthMiddleware {
       role:  methodDefinition[methodName].role || role,
       roles: [...[methodDefinition[methodName].role],
               ...methodDefinition[methodName].roles || [],
-              ...roles].filter((role) => role),
+              ...roles].filter((role) => role)
+                       .filter((role, i, roles) => roles.indexOf(role) == i),
     });
 
     const token = req.headers[authOptions.authorizationHeader.toLowerCase()] ||
@@ -64,11 +63,9 @@ export class AuthMiddleware {
       return res.status(401).send({ message: 'Unauthorized' });
     }
 
-    const { success, data } = authOptions.strategy == 'jwt' ?
-                              authProvider.verify(jwt.verify(token, authOptions.secret), authTarget) :
-                              authProvider.verify(token, authTarget);
+    const { success, data } = authProvider.verify(token, authTarget);
     if(!success) {
-      return res.status(401).send({ message: 'Unauthorized' });
+      return res.status(403).send({ message: 'Forbidden' });
     }
     req.auth = data;
     next();

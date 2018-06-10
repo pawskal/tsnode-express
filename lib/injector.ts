@@ -40,7 +40,11 @@ export default class Injector {
   public AuthorizationDecorator (auth?: IAuthRole) : Function {
     return (target: Type<any>) : void => {
       const controller: IController = this.controllers.get(target.name);
-      Object.assign(controller, { auth: true, role: auth && auth.role || 'default' });
+      Object.assign(controller, { 
+        auth: true,
+        roles: auth && auth.roles,
+        role: auth && auth.role
+     });
     }
   }
   
@@ -81,6 +85,7 @@ export default class Injector {
     Object.assign(methodDefinition, {
       auth: authOption && authOption.auth,
       role: authOption && authOption.role,
+      roles: authOption && authOption.roles,
       [type] : {
         name: fname,
         handler: descriptor.value as Function
