@@ -5,13 +5,29 @@
 npm install tsnode-express --save
 ```
 
+### Configure tsconfig.json
+
+```
+{
+  "compilerOptions": {
+    "target": "es6",                     
+    "module": "commonjs",                  
+    "declaration": true,
+    "strict": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+  }
+}
+```
+
 ### Start application
 
 ``` typescript
 import http from 'http';
 import { Application } from 'tsnode-express';
 
-const app = new Application()
+const application = new Application()
 
 application.start((express) => {
   http.createServer(express).listen(3000, () => {
