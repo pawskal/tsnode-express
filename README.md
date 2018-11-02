@@ -22,7 +22,7 @@ npm install tsnode-express --save
 ```
 
 ### Start application
-
+Create index.ts file
 ``` typescript
 import http from 'http';
 import { Application } from 'tsnode-express';
@@ -35,6 +35,12 @@ application.start((express) => {
   })
 })
 ```
+
+### Compile code with ts-node
+```
+ ./node_modules/.bin/ts-node index.ts
+```
+##### You can install ts-node globally, connect nodemon or configure somehow else
 
 ### Make first request
 Expected result for GET http://localhost:3000/health
@@ -184,6 +190,7 @@ Expected result fot the POST http://localhost:3000/some/echo/echoParam?echo=echo
 
 ### Use reuest`s Before and After hooks
 #### Add hooks and route function to the controller
+In afrer hook available result object wich collect data from original method
 ```typescript
 @Before('GET', '/hooks')
 beforeWithHooks(req: IRequest, res: IResponse, next: Function) {
@@ -273,7 +280,23 @@ Insert before applocation.start() function
 
 ```typescript
 application.useAuthorizationProvider(AuthProvider, (options: IAuthOptions) => {
-  console.log(options)
   options.secret = 'SUPER PUPES SECRET';
 })
 ```
+
+### CORS and primary configuretion not includet to lib yet
+Constructor of applications retunrs an express instance
+so you can configure it before application builds
+
+Example how to configure CORS
+```typescript
+const application = new Application((express) => {
+  express.use((req: IRequest, res: IResponse, next: Function) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    next();
+  });
+});
+```
+
+#### Doc is not finished yet, but you can see full example on github

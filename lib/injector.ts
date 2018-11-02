@@ -58,7 +58,6 @@ export default class Injector {
   
   public ServicDecorator () : Function {
     return (target: Type<any>) : void => {
-      console.log(target)
       this.set(target);
     }
   } 
