@@ -332,7 +332,7 @@ in `AuthProvider` `verify` handler
 @Get('sign-in', { auth: false })
 ```
 Also you can exclude some routes from authorization inside sequre controller
-This migth be helps when controller needs to be sequre but some routes sould be public
+This migth be helps when controller needs to be sequre but some routes should be public
 For example in case when you configure webhook with custom auth
 
 ### CORS and primary configuretion not includet to lib yet
