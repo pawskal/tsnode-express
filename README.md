@@ -2,6 +2,7 @@
 
 ### Download package
 ```
+npm init -y
 npm install tsnode-express --save
 ```
 
@@ -262,27 +263,77 @@ Expected result fot the GET http://localhost:3000:3000/some/single-after-hook/so
 #### Write authorization provider
 
 ```typescript
-import { IAuthMiddleware, IVerifyResponse, IAuthTarget } from "tsnode-express";
-import { ConfigProvider } from "tsnode-express";
+import { IAuthProvider, IAuthTarget } from "tsnode-express";
 
 @Reflect.metadata('design', 'paramtypes')
-class AuthProvider implements IAuthMiddleware {
-  verify(data: any, authTarget: IAuthTarget): IVerifyResponse {
-    return {
-      success: data.name == 'JDoe',
-      data
-    };
+class AuthProvider implements IAuthProvider {
+  verify(token: string, authTarget: IAuthTarget): any {
+    // veryfy token here and return the obj witch you want to see in req otions
+    return { name: 'John Doe' };
   }
 }
 ```
+##### You can inject in `AuthProvider` application `ConfigProvider` or any other service
+##### Any object which you returns from `verify` you can get on request handler
+#### Example of `AuthTarget`
+```
+  AuthTarget {
+    controller: 'AuthController',
+    method: 'get',
+    basePath: '/auth',
+    path: '/me',
+    functionName: 'me',
+    role: 'default',
+    roles: [ 'default', 'admin', 'super' ],
+    fullPath: '/auth/me' }
+```
 
-Insert before applocation.start() function
+Insert before applocation.start() function and define where and how you want to handle auth token
 
 ```typescript
 application.useAuthorizationProvider(AuthProvider, (options: IAuthOptions) => {
-  options.secret = 'SUPER PUPES SECRET';
+  // Define token handler field or leave empty
 })
 ```
+
+By defalult options looks like
+```
+AuthOptions {
+  authorizationHeader: 'authorization',
+  authorizationQueryParam: 'access_token',
+  authorizationBodyField: 'accessToken' }
+```
+
+#### Decorare your controller
+```typescript
+@Authorization()
+@Controller('auth')
+export class AuthController {
+}
+```
+
+Rigth now any request to `/auth` will be sequre by AuthProvider `verify` handler
+
+#### Authorization oprions
+```typescript
+@Authorization({ role: 'default', roles: ['admin', 'user'] })
+```
+`@Authorization` decorator accept role/roles otions which will be inclured to `AuthTarget` object
+in `AuthProvider` `verify` handler
+
+#### Authorization oppions in routes decorator
+```typescript
+@Get('me', { role: 'default' })
+```
+Route decorator also accept role/roles otions which will be inclured to `AuthTarget` object
+in `AuthProvider` `verify` handler
+
+```typescript
+@Get('sign-in', { auth: false })
+```
+Also you can exclude some routes from authorization inside sequre controller
+This migth be helps when controller needs to be sequre but some routes sould be public
+For example in case when you configure webhook with custom auth
 
 ### CORS and primary configuretion not includet to lib yet
 Constructor of applications retunrs an express instance
@@ -299,4 +350,47 @@ const application = new Application((express) => {
 });
 ```
 
-#### Doc is not finished yet, but you can see full example on github
+You can choose another way and extend your own class from application
+```typescript
+
+class OwnApp extends Application {
+  constructor() {
+    super()
+    this.express.use((req: IRequest, res: IResponse, next: Function) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+      next();
+    });
+  }
+}
+
+const app = new OwnApp();
+app.start();
+```
+
+### Building from several files and folders
+As the typescript `import` is different with nodejs `require`
+Application have a simple stub to keep code structural
+
+Example: 
+  - moduleA
+    - service.ts
+    - controller.ts
+    - index.ts
+  - moduleB 
+    - controller.ts
+    - service.ts
+    - index.ts
+  - index.ts
+
+```typescript
+import * as moduleA from './moduleA';
+import * as moduleB from './moduleB';
+
+const application = new Application();
+
+application.registerModule(moduleA);
+application.registerModule(moduleB);
+```
+
+### Doc is not finished yet, but you can see full example on github
