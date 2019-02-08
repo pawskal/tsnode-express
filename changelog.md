@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-
+add event sourcing support (08.02.2019)
 ### Changed
 
 ## 0.0.4 - 2018-10-09

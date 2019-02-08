@@ -111,12 +111,12 @@ class Application {
 
             const before: Function = routes[method]['before'] && routes[method]['before'].handler || stub;
             const origin: Function = routes[method]['origin'] && routes[method]['origin'].handler || stub;
-            const after: Function = routes[method]['after'] && routes[method]['after'].handler || stub;
+            const after: Function = routes[method]['after'] && routes[method]['after'].handler;
 
             try {
               await before.apply(instance, arguments);
               res.result = await origin.call(instance, new RequestArguments(req)) || {};
-              await after.apply(instance, arguments);
+              await after && after.apply(instance, arguments);
             } catch (e) {
               res.status(e.statusCode || 500).json({
                 status: e.statusCode || 500,
@@ -124,7 +124,7 @@ class Application {
                 name: e.name
               })
             } finally {
-              process.nextTick(() => finished ? void 0 : res.send(res.result))
+              process.nextTick(() => finished ? void 0 : !after && res.send(res.result))
             }
           }
 
