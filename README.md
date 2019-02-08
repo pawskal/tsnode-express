@@ -256,6 +256,7 @@ Expected result fot the GET http://localhost:3000:3000/some/single-after-hook/so
   "break": "After hook catch someParam param"
 }
 ```
+#### Afrer hook should always close response
 
 ## AUTHORIZATION
 

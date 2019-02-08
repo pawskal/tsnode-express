@@ -41,6 +41,7 @@ export class SomeController {
   @After('GET', '/hooks')
   afterWithHooks(req: IRequest, res: IResponse, next: Function) {
     res.result = Object.assign(req.body, res.result, { after: 'after hook' })
+    res.json(res.result)
   }
 
   @Before('GET', '/single-before-hook/:param')

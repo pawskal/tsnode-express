@@ -1,6 +1,6 @@
 {
   "name": "tsnode-express",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "nodejs express typescript",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
