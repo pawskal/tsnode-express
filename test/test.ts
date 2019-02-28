@@ -20,7 +20,7 @@ test('server should be live', async (t) => {
 
 test('server should return 404', async (t) => {
   const expected  = {
-    statusCode: 404,
+    status: 404,
     message: 'Not Found',
     name: 'NotFoundError'
   };
@@ -121,7 +121,7 @@ test('Should return unauthorized', async (t) => {
   const expected = {
     status: 401,
     message: 'Unauthorized',
-    name: 'AuthorizationError'
+    name: 'UnauthorizedError'
   }
   try {
     await request.post('http://localhost:3000/auth', options);
@@ -201,7 +201,7 @@ test('Should return Forbidden Error', async (t) => {
   const expected = {
     status: 403,
     message: 'Forbidden access for /auth/:name',
-    name: 'Error'
+    name: 'ForbiddenError'
   }
   try {
     const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);

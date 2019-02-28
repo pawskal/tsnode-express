@@ -1,6 +1,8 @@
 import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
+import { NotFoundError } from 'ts-http-errors';
+import { success, warning } from 'nodejs-lite-logger';
 import Injector from './injector';
 import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
@@ -29,13 +31,11 @@ class Application {
   protected configProvider: ConfigProvider;
 
   protected controllers: Map<string, IController>;
+
+  protected logLevels: string[] = ['success'];
   
   constructor(cb?: Function) {
     this.express = express();
-
-    this.express.use('/health', this.health)
-    this.express.use(bodyParser.json());
-    this.express.use(bodyParser.urlencoded({ extended: false }));
 
     this.router = Router();
     
@@ -46,6 +46,10 @@ class Application {
     this._injector.setInstance(this);
 
     cb ? cb(this.express) : void 0
+
+    this.express.use('/health', this.health)
+    this.express.use(bodyParser.json());
+    this.express.use(bodyParser.urlencoded({ extended: false }));
 
     return Application._instance || (Application._instance = this);
   }
@@ -58,12 +62,13 @@ class Application {
                                                    this.authorizationOptions, this.controllers) 
                               : next();
     } catch (e) {
-      res.status(e.statusCode || 500).json({
-        status: e.statusCode || 500,
-        message: e.message,
-        name: e.name
-      })
+      this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
+      res.status(e.statusCode || 500).json(e);
     }
+  }
+
+  setLogLevels(cb) {
+    this.logLevels = cb();
   }
 
   public useAuthorizationProvider<T>(provider: Type<T>, cb?: Function) : void {
@@ -89,8 +94,10 @@ class Application {
   }
 
   protected handleNotFound() {
-    arguments[1].status(400)
-                .json({ statusCode: 404, message: 'Not Found', name: 'NotFoundError' })
+    const e: NotFoundError = new NotFoundError('Not Found');
+    this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
+    arguments[1].status(404)
+                .json(e);
   }
 
   protected buildController(definition: IController, name: string) : void {
@@ -118,11 +125,8 @@ class Application {
               res.result = await origin.call(instance, new RequestArguments(req)) || {};
               await after && after.apply(instance, arguments);
             } catch (e) {
-              res.status(e.statusCode || 500).json({
-                status: e.statusCode || 500,
-                message: e.message,
-                name: e.name
-              })
+              this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
+              res.status(e.statusCode || 500).json(e);
             } finally {
               process.nextTick(() => finished ? void 0 : !after && res.send(res.result))
             }
@@ -133,7 +137,7 @@ class Application {
           const authMiddleware = routes[method].auth ?
                                  this.authMiddleware.bind(this) :
                                  function () { arguments[2].call() };
-          console.log(method.toUpperCase(), `${basePath}${path}`)
+          this.logLevels.includes('success') && success(method.toUpperCase(), '\t', `${basePath}${path}`);
           this.express.use(basePath, router[method](path, authMiddleware, handler));
         }));
   }
@@ -143,7 +147,7 @@ class Application {
       this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
     }
     this.controllers.forEach(this.buildController.bind(this));
-    this.express.use(this.handleNotFound);
+    this.express.use(this.handleNotFound.bind(this));
     cb(this.express);
   }
 }

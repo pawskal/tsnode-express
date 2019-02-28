@@ -6,10 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-add event sourcing support (08.02.2019)
+Add logger with log levels
+Add http errors lib
 ### Changed
+Make veryfy function works async
 #### Breaking changes
- "After" hook should always close response
  
 ## 0.0.6 - 2019-02-08
 ### Added

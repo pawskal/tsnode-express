@@ -1,3 +1,5 @@
+import { UnauthorizedError } from 'ts-http-errors'
+
 import { 
   IAuthProvider,
   IAuthOptions,
@@ -60,23 +62,12 @@ export class AuthMiddleware {
                   req.query[authOptions.authorizationQueryParam] ||
                   req.body[authOptions.authorizationBodyField];
     if(!token) {
-      return res.status(401).json({
-        status: 401,
-        message: 'Unauthorized',
-        name: 'AuthorizationError'
-      });
+      return res.status(401)
+        .json(new UnauthorizedError('Unauthorized'));
     }
 
-    try {
-      req.auth = authProvider.verify(token, authTarget);
-      next();
-    } catch (e) {
-      res.status(e.statusCode || 403).json({
-        status: e.statusCode || 403,
-        message: e.message || 'Forbidden',
-        name: e.name
-      });
-    }
+    authProvider.verify(token, authTarget)
+      .then(auth => (Object.assign(req, { auth }), next()))
   }
 }
   
