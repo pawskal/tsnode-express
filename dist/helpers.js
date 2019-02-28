@@ -10,7 +10,7 @@ class AuthOptions {
 exports.AuthOptions = AuthOptions;
 class ConfigProvider {
     constructor(config) {
-        Object.assign(this, config);
+        Object.assign(this, { logLevels: [], printStack: false }, config);
     }
 }
 exports.ConfigProvider = ConfigProvider;

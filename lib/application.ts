@@ -1,8 +1,8 @@
 import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
-import { NotFoundError } from 'ts-http-errors';
-import { success, warning } from 'nodejs-lite-logger';
+import { NotFoundError, InternalServerError, ExtendedError } from 'ts-http-errors';
+import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
 import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
@@ -47,7 +47,7 @@ class Application {
 
     cb ? cb(this.express) : void 0
 
-    this.express.use('/health', this.health)
+    this.express.use('/health', this.health.bind(this));
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
 
@@ -67,10 +67,6 @@ class Application {
     }
   }
 
-  setLogLevels(cb) {
-    this.logLevels = cb();
-  }
-
   public useAuthorizationProvider<T>(provider: Type<T>, cb?: Function) : void {
     this.enableAthorization = true;
     this._injector.set(provider);
@@ -84,23 +80,36 @@ class Application {
   public useConfig(cb: Function) : void {
     const config = {};
     cb ? cb(config) : void 0;
-    this.configProvider = new ConfigProvider(config)
+    this.configProvider = new ConfigProvider(config);
     this._injector.setInstance(this.configProvider);
   }
 
   protected health() {
+    this.configProvider.logLevels.includes('info') && info('GET', '\t', '/health');
     arguments[1].status(200)
-                .json({ status: 'live' })
+                .json({ status: 'live' });
   }
 
-  protected handleNotFound() {
+  public handleNotFound() {
     const e: NotFoundError = new NotFoundError('Not Found');
-    this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
-    arguments[1].status(404)
-                .json(e);
+    this.handleError(e, ...arguments)
+  }
+
+  public handleError(err, ...args: any[]);
+  public handleError(err: ExtendedError, req: IRequest, res: IResponse, next: Function) {
+    const { configProvider }: ConfigProvider = Application._instance;
+    if(err.statusCode) {
+      configProvider.logLevels.includes('warning')
+        && warning(err.name, '\t', configProvider.printStack ? err : err.message);
+      res.status(err.statusCode || 500).json(err);
+    } else {
+      configProvider.logLevels.includes('error') && error(err);
+      res.status(500).json(new InternalServerError(err.message));
+    }  
   }
 
   protected buildController(definition: IController, name: string) : void {
+    const { configProvider }: ConfigProvider = Application._instance;
     definition.instance = Application._instance.Injector.resolve<any>(name);
     
     const router = Router();
@@ -111,6 +120,16 @@ class Application {
       .forEach((routes: IRoutes, path: string) =>
         Object.keys(routes).forEach((method: string) => {
           async function handler(req: IRequest, res: IResponse) {
+            configProvider.logLevels.includes('info')
+              && info(
+                method.toUpperCase(), '\t',
+                `${basePath}${path}`, '\t',
+                'target: ', '\t',
+                routes[method]['before'] && routes[method]['before'].name || '',
+                routes[method]['origin'] && routes[method]['origin'].name || '',
+                routes[method]['after'] && routes[method]['after'].name || ''
+              );
+
             let finished: boolean = false;
             res.on('finish', () => finished = true);
 
@@ -125,8 +144,7 @@ class Application {
               res.result = await origin.call(instance, new RequestArguments(req)) || {};
               await after && after.apply(instance, arguments);
             } catch (e) {
-              this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
-              res.status(e.statusCode || 500).json(e);
+              Application._instance.handleError(e, ...arguments);
             } finally {
               process.nextTick(() => finished ? void 0 : !after && res.send(res.result))
             }
@@ -137,8 +155,9 @@ class Application {
           const authMiddleware = routes[method].auth ?
                                  this.authMiddleware.bind(this) :
                                  function () { arguments[2].call() };
-          this.logLevels.includes('success') && success(method.toUpperCase(), '\t', `${basePath}${path}`);
           this.express.use(basePath, router[method](path, authMiddleware, handler));
+          configProvider.logLevels.includes('success')
+            && success(method.toUpperCase(), '\t', `${basePath}${path}`);
         }));
   }
 
@@ -148,6 +167,7 @@ class Application {
     }
     this.controllers.forEach(this.buildController.bind(this));
     this.express.use(this.handleNotFound.bind(this));
+    this.express.use(this.handleError.bind(this));
     cb(this.express);
   }
 }

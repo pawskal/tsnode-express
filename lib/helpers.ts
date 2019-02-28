@@ -10,7 +10,7 @@ export class AuthOptions implements IAuthOptions {
 export class ConfigProvider {
   [x: string]: any;
   constructor(config: any) {
-    Object.assign(this, config)
+    Object.assign(this, { logLevels: [], printStack: false }, config)
   }
 }
 

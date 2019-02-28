@@ -2,6 +2,7 @@ import { Controller, Get, Before, After, Post, IRequest, IResponse } from "tsnod
 import { IRequestArguments } from 'tsnode-express';
 
 import { SomeService } from './some.service';
+import { BadRequestError } from "ts-http-errors";
 
 @Controller('some')
 export class SomeController {
@@ -52,5 +53,16 @@ export class SomeController {
   @After('GET', '/single-after-hook/:param')
   singleAfterHook(req: IRequest, res: IResponse, next: Function) {
     res.send({ break: `After hook catch ${req.params.param} param` })
+  }
+
+  @Get('/custom-error')
+  badRequest(args: IRequestArguments) {
+    throw new BadRequestError('custom error')
+  }
+
+  @Get('/internal-error')
+  internalError(args: IRequestArguments) {
+    let unknown: string;
+    unknown.charCodeAt(0);
   }
 }

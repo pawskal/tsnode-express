@@ -29,7 +29,7 @@ class Application {
         this.controllers = this._injector.controllers;
         this._injector.setInstance(this);
         cb ? cb(this.express) : void 0;
-        this.express.use('/health', this.health);
+        this.express.use('/health', this.health.bind(this));
         this.express.use(body_parser_1.default.json());
         this.express.use(body_parser_1.default.urlencoded({ extended: false }));
         return Application._instance || (Application._instance = this);
@@ -48,9 +48,6 @@ class Application {
             res.status(e.statusCode || 500).json(e);
         }
     }
-    setLogLevels(cb) {
-        this.logLevels = cb();
-    }
     useAuthorizationProvider(provider, cb) {
         this.enableAthorization = true;
         this._injector.set(provider);
@@ -67,16 +64,28 @@ class Application {
         this._injector.setInstance(this.configProvider);
     }
     health() {
+        this.configProvider.logLevels.includes('info') && nodejs_lite_logger_1.info('GET', '\t', '/health');
         arguments[1].status(200)
             .json({ status: 'live' });
     }
     handleNotFound() {
         const e = new ts_http_errors_1.NotFoundError('Not Found');
-        this.logLevels.includes('warning') && nodejs_lite_logger_1.warning(e.name, '\t', e.message);
-        arguments[1].status(404)
-            .json(e);
+        this.handleError(e, ...arguments);
+    }
+    handleError(err, req, res, next) {
+        const { configProvider } = Application._instance;
+        if (err.statusCode) {
+            configProvider.logLevels.includes('warning')
+                && nodejs_lite_logger_1.warning(err.name, '\t', configProvider.printStack ? err : err.message);
+            res.status(err.statusCode || 500).json(err);
+        }
+        else {
+            configProvider.logLevels.includes('error') && nodejs_lite_logger_1.error(err);
+            res.status(500).json(new ts_http_errors_1.InternalServerError(err.message));
+        }
     }
     buildController(definition, name) {
+        const { configProvider } = Application._instance;
         definition.instance = Application._instance.Injector.resolve(name);
         const router = express_2.default();
         const { routes, basePath, auth, instance } = definition;
@@ -85,6 +94,8 @@ class Application {
             .forEach((routes, path) => Object.keys(routes).forEach((method) => {
             function handler(req, res) {
                 return __awaiter(this, arguments, void 0, function* () {
+                    configProvider.logLevels.includes('info')
+                        && nodejs_lite_logger_1.info(method.toUpperCase(), '\t', `${basePath}${path}`, '\t', 'target: ', '\t', routes[method]['before'] && routes[method]['before'].name || '', routes[method]['origin'] && routes[method]['origin'].name || '', routes[method]['after'] && routes[method]['after'].name || '');
                     let finished = false;
                     res.on('finish', () => finished = true);
                     const stub = () => { };
@@ -97,8 +108,7 @@ class Application {
                         (yield after) && after.apply(instance, arguments);
                     }
                     catch (e) {
-                        this.logLevels.includes('warning') && nodejs_lite_logger_1.warning(e.name, '\t', e.message);
-                        res.status(e.statusCode || 500).json(e);
+                        Application._instance.handleError(e, ...arguments);
                     }
                     finally {
                         process.nextTick(() => finished ? void 0 : !after && res.send(res.result));
@@ -109,8 +119,9 @@ class Application {
             const authMiddleware = routes[method].auth ?
                 this.authMiddleware.bind(this) :
                 function () { arguments[2].call(); };
-            this.logLevels.includes('success') && nodejs_lite_logger_1.success(method.toUpperCase(), '\t', `${basePath}${path}`);
             this.express.use(basePath, router[method](path, authMiddleware, handler));
+            configProvider.logLevels.includes('success')
+                && nodejs_lite_logger_1.success(method.toUpperCase(), '\t', `${basePath}${path}`);
         }));
     }
     start(cb) {
@@ -119,6 +130,7 @@ class Application {
         }
         this.controllers.forEach(this.buildController.bind(this));
         this.express.use(this.handleNotFound.bind(this));
+        this.express.use(this.handleError.bind(this));
         cb(this.express);
     }
 }

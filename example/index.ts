@@ -1,6 +1,7 @@
 import http from 'http';
 
 import { Application, IAuthOptions, IRequest, IResponse } from 'tsnode-express';
+import { info } from 'nodejs-lite-logger';
 
 import * as SomeModule from './someModule';
 import * as AuthModule from './authModule';
@@ -18,6 +19,8 @@ const application = new Application((express) => {
 application.useConfig((config) => {
   config.test = 'test config field';
   config.secret = 'SUPER SECRET'
+  config.logLevels = ['info', 'success', 'error', 'warning'];
+  config.printStack = false;
 });
 
 application.useAuthorizationProvider(AuthProvider)
@@ -26,9 +29,8 @@ application.registerModule(SomeModule);
 application.registerModule(AuthModule);
 
 application.start((express) => {
-  // console.log(express._router)
   http.createServer(express).listen(3000, () => {
-    console.log('Server listening')
+    info('Server listening');
   })
 })
 

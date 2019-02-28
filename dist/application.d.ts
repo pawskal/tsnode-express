@@ -16,11 +16,11 @@ declare class Application {
     constructor(cb?: Function);
     registerModule(...args: any[]): void;
     protected authMiddleware(req: IRequest, res: IResponse, next: Function): void;
-    setLogLevels(cb: any): void;
     useAuthorizationProvider<T>(provider: Type<T>, cb?: Function): void;
     useConfig(cb: Function): void;
     protected health(): void;
-    protected handleNotFound(): void;
+    handleNotFound(): void;
+    handleError(err: any, ...args: any[]): any;
     protected buildController(definition: IController, name: string): void;
     start(cb: Function): void;
 }

@@ -14,7 +14,7 @@ export interface IRequest extends Request {
 }
 
 export interface IAuthProvider {
-  verify(token: string, authTarget: IAuthTarget): Promise<any>;
+  verify<T>(token: string, authTarget: IAuthTarget): Promise<T>;
 }
 
 export interface IAuthOptions {

@@ -2,6 +2,7 @@ import test from 'tape';
 import { CoreOptions } from 'request';
 import request from 'request-promise-native';
 import application from '../example'
+import { BadRequestError } from 'ts-http-errors';
 
 const { express } = application;
 
@@ -242,6 +243,32 @@ test('Should return list users', async (t) => {
     t.deepEqual(data, expected, 'Should get users')
   }
   catch(e) { t.ifErr(e); }
+  finally { t.end(); }
+})
+
+test('should catch custom error', async (t) => {
+  const expected = {
+    name: "BadRequestError",
+    status: 400,
+    message: "custom error"
+  };
+  try {
+    await request.get('http://localhost:3000/some/custom-error', options);
+  }
+  catch({ error }) { t.deepEqual(error, expected, 'catch custom error'); }
+  finally { t.end(); }
+})
+
+test('should catch internal error', async (t) => {
+  const expected = {
+    name: 'InternalServerError',
+    status: 500,
+    message: 'Cannot read property \'charCodeAt\' of undefined'
+  };
+  try {
+    await request.get('http://localhost:3000/some/internal-error', options);
+  }
+  catch({ error }) { t.deepEqual(error, expected, 'catch internal error'); }
   finally { t.end(); }
 })
 
