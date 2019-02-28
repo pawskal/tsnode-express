@@ -262,13 +262,13 @@ Expected result fot the GET http://localhost:3000:3000/some/single-after-hook/so
 
 ### Application contains the powerfull authorization interface
 #### Write authorization provider
-
+Verify function should terurns the promise
 ```typescript
 import { IAuthProvider, IAuthTarget } from "tsnode-express";
 
 @Reflect.metadata('design', 'paramtypes')
 class AuthProvider implements IAuthProvider {
-  verify(token: string, authTarget: IAuthTarget): any {
+  async verify(token: string, authTarget: IAuthTarget): Promise<any> {
     // veryfy token here and return the obj witch you want to see in req otions
     return { name: 'John Doe' };
   }
@@ -336,6 +336,25 @@ Also you can exclude some routes from authorization inside sequre controller
 This migth be helps when controller needs to be sequre but some routes should be public
 For example in case when you configure webhook with custom auth
 
+### Enabling internal logging
+logLevels might contains array as described below
+
+ - info - logging the incoming request(path, target functions)
+ - success - runs once when server starts and display sucessfuly builded routes
+ - error - always print stactrace and display errors without statusCodes
+ - warning - display errors which was throwed mannualy and contains the statusCodes
+
+printStack says to application is the print stack trace required on warnings.
+
+These options by defaulf is empty
+
+```typescript
+  application.useConfig((config) => {
+    config.logLevels = ['info', 'success', 'error', 'warning'];
+    config.printStack = false;
+  });
+```
+
 ### CORS and primary configuretion not includet to lib yet
 Constructor of applications retunrs an express instance
 so you can configure it before application builds
@@ -349,6 +368,19 @@ const application = new Application((express) => {
     next();
   });
 });
+```
+
+### Error Handling
+The applications uses as error lib https://www.npmjs.com/package/ts-http-errors
+
+So applications allows to override `handleError` and `handleNotFound` methods
+which uses as express middleware
+
+```typescript
+const application = new Application();
+app.handleError = function (err: ExtendedError, req: IRequest, res: IResponse, next: Function) {
+  //put your code here
+}
 ```
 
 You can choose another way and extend your own class from application
