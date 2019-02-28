@@ -49,7 +49,8 @@ class AuthMiddleware {
                 .json(new ts_http_errors_1.UnauthorizedError('Unauthorized'));
         }
         authProvider.verify(token, authTarget)
-            .then(auth => (Object.assign(req, { auth }), next()));
+            .then(auth => (Object.assign(req, { auth }), next()))
+            .catch(e => res.status(e.statusCode || 500).json(e));
     }
 }
 exports.AuthMiddleware = AuthMiddleware;

@@ -68,6 +68,7 @@ export class AuthMiddleware {
 
     authProvider.verify(token, authTarget)
       .then(auth => (Object.assign(req, { auth }), next()))
+      .catch(e => res.status(e.statusCode || 500).json(e))
   }
 }
   
