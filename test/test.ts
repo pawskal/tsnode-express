@@ -22,7 +22,7 @@ test('server should be live', async (t) => {
 test('server should return 404', async (t) => {
   const expected  = {
     status: 404,
-    message: 'Not Found',
+    message: 'Route /incorrect was not found',
     name: 'NotFoundError'
   };
   try {

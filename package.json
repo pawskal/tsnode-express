@@ -1,19 +1,18 @@
 {
   "name": "tsnode-express",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "nodejs express typescript",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "prepublish": "npm run build",
     "start": "./node_modules/.bin/ts-node -- ./example/index.ts",
     "dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
     "test": "./node_modules/.bin/ts-node -- ./test/test.ts | tap-spec"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pawskal/tsnode-express.git#v0.0.8"
+    "url": "git+https://github.com/pawskal/tsnode-express.git#v0.0.9"
   },
   "keywords": [
     "nodejs",

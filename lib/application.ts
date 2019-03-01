@@ -92,8 +92,10 @@ class Application {
   }
 
   public handleNotFound() {
-    const e: NotFoundError = new NotFoundError('Not Found');
-    this.handleError(e, ...arguments)
+    this.handleError(
+      new NotFoundError(`Route ${arguments[0].originalUrl} was not found`),
+      ...arguments
+    )
   }
 
   public handleError(err, ...args: any[]);
