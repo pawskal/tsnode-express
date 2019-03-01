@@ -51,6 +51,8 @@ class Application {
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: false }));
 
+    this.configProvider = new ConfigProvider({});
+    this._injector.setInstance(this.configProvider);
     return Application._instance || (Application._instance = this);
   }
 
@@ -78,10 +80,7 @@ class Application {
   }
 
   public useConfig(cb: Function) : void {
-    const config = {};
-    cb ? cb(config) : void 0;
-    this.configProvider = new ConfigProvider(config);
-    this._injector.setInstance(this.configProvider);
+    cb ? cb(this.configProvider) : void 0;
   }
 
   protected health() {

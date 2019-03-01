@@ -32,6 +32,8 @@ class Application {
         this.express.use('/health', this.health.bind(this));
         this.express.use(body_parser_1.default.json());
         this.express.use(body_parser_1.default.urlencoded({ extended: false }));
+        this.configProvider = new helpers_1.ConfigProvider({});
+        this._injector.setInstance(this.configProvider);
         return Application._instance || (Application._instance = this);
     }
     get Injector() {
@@ -58,10 +60,7 @@ class Application {
         cb ? cb(this.authorizationOptions) : void 0;
     }
     useConfig(cb) {
-        const config = {};
-        cb ? cb(config) : void 0;
-        this.configProvider = new helpers_1.ConfigProvider(config);
-        this._injector.setInstance(this.configProvider);
+        cb ? cb(this.configProvider) : void 0;
     }
     health() {
         this.configProvider.logLevels.includes('info') && nodejs_lite_logger_1.info('GET', '\t', '/health');
