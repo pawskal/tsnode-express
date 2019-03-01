@@ -1,12 +1,11 @@
 import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
-import { NotFoundError, InternalServerError, ExtendedError } from 'ts-http-errors';
+import { NotFoundError, InternalServerError, ExtendedError, UnauthorizedError } from 'ts-http-errors';
 import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
 import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
-import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
-import { AuthMiddleware } from './authMiddleware';
+import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 
 class Application {
 
@@ -32,8 +31,6 @@ class Application {
 
   protected controllers: Map<string, IController>;
 
-  protected logLevels: string[] = ['success'];
-  
   constructor(cb?: Function) {
     this.express = express();
 
@@ -58,13 +55,26 @@ class Application {
 
   public registerModule(...args): void {}
 
-  protected authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
+  protected async authMiddleware(req: IRequest, res: IResponse, next: Function) : Promise<void> {
     try {
-      this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
-                                                   this.authorizationOptions, this.controllers) 
-                              : next();
+      if(this.enableAthorization) {
+        const token: string = req.headers[this.authorizationOptions.authorizationHeader.toLowerCase()] ||
+                              req.query[this.authorizationOptions.authorizationQueryParam] ||
+                              req.body[this.authorizationOptions.authorizationBodyField];
+        const authTarget: AuthTarget = new AuthTarget(req, this.controllers);
+        this.configProvider.logLevels.includes('info')
+              && info(
+                authTarget.method.toUpperCase(), '\t',
+                authTarget.fullPath, '\t',
+                'target: ', '\t',
+                authTarget.functionName
+              );
+        if(!token) throw new UnauthorizedError();
+        req.auth = await this.authorizationProvider.instance.verify(token, authTarget);
+      }
+      next();
     } catch (e) {
-      this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
+      this.configProvider.logLevels.includes('warning') && warning(e.name, '\t', e.message);
       res.status(e.statusCode || 500).json(e);
     }
   }
