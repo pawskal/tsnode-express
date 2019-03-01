@@ -1,12 +1,11 @@
 import express from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
-import { NotFoundError, InternalServerError, ExtendedError } from 'ts-http-errors';
+import { NotFoundError, InternalServerError, ExtendedError, UnauthorizedError } from 'ts-http-errors';
 import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
 import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
-import { AuthOptions, ConfigProvider, RequestArguments } from './helpers';
-import { AuthMiddleware } from './authMiddleware';
+import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 
 class Application {
 
@@ -32,8 +31,6 @@ class Application {
 
   protected controllers: Map<string, IController>;
 
-  protected logLevels: string[] = ['success'];
-  
   constructor(cb?: Function) {
     this.express = express();
 
@@ -58,14 +55,19 @@ class Application {
 
   public registerModule(...args): void {}
 
-  protected authMiddleware(req: IRequest, res: IResponse, next: Function) : void {
+  protected async authMiddleware(req: IRequest, res: IResponse, next: Function) : Promise<void> {
     try {
-      this.enableAthorization ? new AuthMiddleware(req, res, next, this.authorizationProvider.instance,
-                                                   this.authorizationOptions, this.controllers) 
-                              : next();
+      if(this.enableAthorization) {
+        const token: string = req.headers[this.authorizationOptions.authorizationHeader.toLowerCase()] ||
+                              req.query[this.authorizationOptions.authorizationQueryParam] ||
+                              req.body[this.authorizationOptions.authorizationBodyField];
+        const authTarget: AuthTarget = new AuthTarget(req, this.controllers);
+        if(!token) throw new UnauthorizedError();
+        req.auth = await this.authorizationProvider.instance.verify(token, authTarget);
+      }
+      next();
     } catch (e) {
-      this.logLevels.includes('warning') && warning(e.name, '\t', e.message);
-      res.status(e.statusCode || 500).json(e);
+      this.handleError(e, ...arguments);
     }
   }
 
@@ -119,16 +121,6 @@ class Application {
       .forEach((routes: IRoutes, path: string) =>
         Object.keys(routes).forEach((method: string) => {
           async function handler(req: IRequest, res: IResponse) {
-            configProvider.logLevels.includes('info')
-              && info(
-                method.toUpperCase(), '\t',
-                `${basePath}${path}`, '\t',
-                'target: ', '\t',
-                routes[method]['before'] && routes[method]['before'].name || '',
-                routes[method]['origin'] && routes[method]['origin'].name || '',
-                routes[method]['after'] && routes[method]['after'].name || ''
-              );
-
             let finished: boolean = false;
             res.on('finish', () => finished = true);
 
@@ -151,10 +143,26 @@ class Application {
 
           routes[method].auth = routes[method].auth === false ? false : auth;
 
-          const authMiddleware = routes[method].auth ?
-                                 this.authMiddleware.bind(this) :
-                                 function () { arguments[2].call() };
-          this.express.use(basePath, router[method](path, authMiddleware, handler));
+          const authMiddleware = routes[method].auth && this.authMiddleware.bind(this)
+
+          const logMiddleware = configProvider.logLevels.includes('info')
+            && function() { 
+              info(
+                method.toUpperCase(), '\t',
+                `${basePath}${path}`, '\t',
+                'target: ', '\t',
+                routes[method]['before'] && routes[method]['before'].name || '',
+                routes[method]['origin'] && routes[method]['origin'].name || '',
+                routes[method]['after'] && routes[method]['after'].name || ''
+              );
+              arguments[2].call();
+            }
+
+          this.express.use(basePath, router[method](
+            path,
+            [logMiddleware, authMiddleware].filter(m => m),
+            handler
+          ));
           configProvider.logLevels.includes('success')
             && success(method.toUpperCase(), '\t', `${basePath}${path}`);
         }));
