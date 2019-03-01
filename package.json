@@ -5,10 +5,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
+    "prepublish": "npm run build",
     "start": "./node_modules/.bin/ts-node -- ./example/index.ts",
     "dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
-    "test": "./node_modules/.bin/ts-node -- ./test/test.ts | tap-spec",
-    "build": "tsc"
+    "test": "./node_modules/.bin/ts-node -- ./test/test.ts | tap-spec"
   },
   "repository": {
     "type": "git",

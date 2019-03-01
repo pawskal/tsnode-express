@@ -62,20 +62,12 @@ class Application {
                               req.query[this.authorizationOptions.authorizationQueryParam] ||
                               req.body[this.authorizationOptions.authorizationBodyField];
         const authTarget: AuthTarget = new AuthTarget(req, this.controllers);
-        this.configProvider.logLevels.includes('info')
-              && info(
-                authTarget.method.toUpperCase(), '\t',
-                authTarget.fullPath, '\t',
-                'target: ', '\t',
-                authTarget.functionName
-              );
         if(!token) throw new UnauthorizedError();
         req.auth = await this.authorizationProvider.instance.verify(token, authTarget);
       }
       next();
     } catch (e) {
-      this.configProvider.logLevels.includes('warning') && warning(e.name, '\t', e.message);
-      res.status(e.statusCode || 500).json(e);
+      this.handleError(e, ...arguments);
     }
   }
 
@@ -129,16 +121,6 @@ class Application {
       .forEach((routes: IRoutes, path: string) =>
         Object.keys(routes).forEach((method: string) => {
           async function handler(req: IRequest, res: IResponse) {
-            configProvider.logLevels.includes('info')
-              && info(
-                method.toUpperCase(), '\t',
-                `${basePath}${path}`, '\t',
-                'target: ', '\t',
-                routes[method]['before'] && routes[method]['before'].name || '',
-                routes[method]['origin'] && routes[method]['origin'].name || '',
-                routes[method]['after'] && routes[method]['after'].name || ''
-              );
-
             let finished: boolean = false;
             res.on('finish', () => finished = true);
 
@@ -161,10 +143,26 @@ class Application {
 
           routes[method].auth = routes[method].auth === false ? false : auth;
 
-          const authMiddleware = routes[method].auth ?
-                                 this.authMiddleware.bind(this) :
-                                 function () { arguments[2].call() };
-          this.express.use(basePath, router[method](path, authMiddleware, handler));
+          const authMiddleware = routes[method].auth && this.authMiddleware.bind(this)
+
+          const logMiddleware = configProvider.logLevels.includes('info')
+            && function() { 
+              info(
+                method.toUpperCase(), '\t',
+                `${basePath}${path}`, '\t',
+                'target: ', '\t',
+                routes[method]['before'] && routes[method]['before'].name || '',
+                routes[method]['origin'] && routes[method]['origin'].name || '',
+                routes[method]['after'] && routes[method]['after'].name || ''
+              );
+              arguments[2].call();
+            }
+
+          this.express.use(basePath, router[method](
+            path,
+            [logMiddleware, authMiddleware].filter(m => m),
+            handler
+          ));
           configProvider.logLevels.includes('success')
             && success(method.toUpperCase(), '\t', `${basePath}${path}`);
         }));
