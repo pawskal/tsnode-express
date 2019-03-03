@@ -12,6 +12,22 @@ Removed AuthMiddleware class
 Removed dist folder
 #### Breaking changes
 
+## 0.0.9 - 2019-03-03
+### Added
+Add controller getter to apication instance
+### Changed
+Refactor auth
+Removed AuthMiddleware class
+Removed dist folder
+Refactor middleware injection
+#### Breaking changes
+
+## 0.0.8 - 2019-03-02
+### Added
+### Changed
+Hot fix config provider not required
+#### Breaking changes
+
 ## 0.0.7 - 2019-03-01
 ### Added
 Add logger with log levels
