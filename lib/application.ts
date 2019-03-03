@@ -29,7 +29,7 @@ class Application {
 
   protected configProvider: ConfigProvider;
 
-  protected controllers: Map<string, IController>;
+  protected _controllers: Map<string, IController>;
 
   constructor(cb?: Function) {
     this.express = express();
@@ -38,7 +38,7 @@ class Application {
     
     this._injector = Injector.getInstance();
 
-    this.controllers = this._injector.controllers;
+    this._controllers = this._injector.controllers;
 
     this._injector.setInstance(this);
 
@@ -51,6 +51,10 @@ class Application {
     this.configProvider = new ConfigProvider({});
     this._injector.setInstance(this.configProvider);
     return Application._instance || (Application._instance = this);
+  }
+
+  public get controllers(): Map<string, IController> {
+    return this._controllers;
   }
 
   public registerModule(...args): void {}
