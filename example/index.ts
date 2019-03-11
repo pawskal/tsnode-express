@@ -29,8 +29,8 @@ application.registerModule(SomeModule);
 application.registerModule(AuthModule);
 
 application.start((express) => {
-  express.listen(3000, () => {
-    info('Server listening');
+  express.listen(process.env.PORT, () => {
+    info('Server listening on:', `http://localhost:${process.env.PORT}`);
   })
 })
 

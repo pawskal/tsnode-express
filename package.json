@@ -6,7 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "start": "./node_modules/.bin/ts-node ./example/index.ts",
+    "start": "./node_modules/.bin/ts-node -r dotenv/config ./example/index.ts dotenv_config_path=./example/.env",
     "dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
     "test": "./node_modules/.bin/ts-node -- ./test/test.ts | tap-spec"
   },
@@ -64,6 +64,7 @@
     "@types/request": "^2.47.0",
     "@types/request-promise-native": "^1.0.14",
     "@types/tape": "^4.2.32",
+    "dotenv": "^6.2.0",
     "jsonwebtoken": "^8.2.1",
     "nodemon": "^1.17.1",
     "request": "^2.87.0",
