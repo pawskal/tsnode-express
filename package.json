@@ -1,12 +1,12 @@
 {
-  "name": "tsnode-express",
+  "name": "tsnode-express-dev",
   "version": "0.0.9",
   "description": "nodejs express typescript",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "start": "./node_modules/.bin/ts-node -- ./example/index.ts",
+    "start": "./node_modules/.bin/ts-node ./example/index.ts",
     "dev": "nodemon --exec ./node_modules/.bin/ts-node -- ./example/index.ts",
     "test": "./node_modules/.bin/ts-node -- ./test/test.ts | tap-spec"
   },
@@ -69,7 +69,8 @@
     "request": "^2.87.0",
     "request-promise-native": "^1.0.5",
     "tap-spec": "^5.0.0",
-    "tape": "^4.9.0"
+    "tape": "^4.9.0",
+    "tsnode-express": "0.0.9"
   },
   "directories": {
     "example": "example",

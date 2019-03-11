@@ -29,7 +29,7 @@ application.registerModule(SomeModule);
 application.registerModule(AuthModule);
 
 application.start((express) => {
-  http.createServer(express).listen(3000, () => {
+  express.listen(3000, () => {
     info('Server listening');
   })
 })

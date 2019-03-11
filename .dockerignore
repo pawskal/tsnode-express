@@ -1,0 +1,9 @@
+.idea
+.vscode
+.npmignore
+.git
+package-lock.json
+yarn.lock
+node_modules
+dist
+README.md
