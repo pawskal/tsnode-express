@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 #### Breaking changes
 
+## 0.1.0 - 2019-13-03
+### Added
+Add `inject` method, so now we can inject services without `@Service` decorator
+When `inject` called as factory callcack can be async
+Addes tests for inject functionality
+Add `use` method with wrap `express.use` for more comfortalbe buildind application
+### Changed
+Refactor application: app methods can build chain
+start methos is async now
+so congigs can be loaded asynchronuasly
+refactored example
+refactored docs
+Changeg package version
+
+#### Breaking changes
+start methos is async now
+useConfig is async now 
+
 ## 0.0.9 - 2019-03-03
 ### Added
 Add controller getter to apication instance

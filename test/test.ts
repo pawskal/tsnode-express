@@ -1,18 +1,25 @@
+import { ConfigProvider } from 'tsnode-express';
 import test from 'tape';
+import http from 'http';
 import { CoreOptions } from 'request';
 import request from 'request-promise-native';
-import application from '../example'
-import { BadRequestError } from 'ts-http-errors';
-
-const { express } = application;
+import application from '../example/server'
 
 const options : CoreOptions = {
   json: true
 }
 
+const url = `http://localhost:${process.env.PORT}`
+
+test('start server', async (t) => {
+  await application.start((express, configProvider) => 
+    http.createServer(express).listen(configProvider.port, () => 
+      t.end()))
+})
+
 test('server should be live', async (t) => {
   try {
-    const { status } = await request.get('http://localhost:3000/health', options);
+    const { status } = await request.get(`${url}/health`, options);
     t.equal(status, 'live', 'status should be live');
   }
   catch(e) { t.ifErr(e); }
@@ -26,7 +33,7 @@ test('server should return 404', async (t) => {
     name: 'NotFoundError'
   };
   try {
-    await request.get('http://localhost:3000/incorrect', options);
+    await request.get(`${url}/incorrect`, options);
   }
   catch({ error }) {
     t.ok(error);
@@ -37,7 +44,7 @@ test('server should return 404', async (t) => {
 
 test('server should get success', async (t) => {
   try {
-    const { data } = await request.get('http://localhost:3000/some', options);
+    const { data } = await request.get(`${url}/some`, options);
     t.equal(data, 'success', 'data should be success');
   }
   catch(e) { t.ifErr(e); }
@@ -46,7 +53,7 @@ test('server should get success', async (t) => {
 
 test('server should return data from service', async (t) => {
   try {
-    const { data } = await request.get('http://localhost:3000/some/service', options);
+    const { data } = await request.get(`${url}/some/service`, options);
     t.equal(data, 'from service', 'data sould be from service');
   }
   catch(e) { t.ifErr(e); }
@@ -55,7 +62,7 @@ test('server should return data from service', async (t) => {
 
 test('server should return data from service with config field', async (t) => {
   try {
-    const { configField } = await request.get('http://localhost:3000/some/service', options);
+    const { configField } = await request.get(`${url}/some/service`, options);
     t.equal(configField, 'test config field', 'data sould be from config provider');
   }
   catch(e) { t.ifErr(e); }
@@ -72,7 +79,7 @@ test('server should return echo', async (t) => {
     data: 'echoBody'
   };
   try {
-    const response = await request.post('http://localhost:3000/some/echo/echoParam?echo=echoQuery',
+    const response = await request.post(`${url}/some/echo/echoParam?echo=echoQuery`,
                                          Object.assign({}, options, { form }));
     t.deepEqual(response, expected, 'should collect expected echo fields');
   }
@@ -87,7 +94,7 @@ test('Hooks should works', async (t) => {
     after: 'after hook'
   };
   try {
-    const response = await request.get('http://localhost:3000/some/hooks', options);
+    const response = await request.get(`${url}/some/hooks`, options);
     t.deepEqual(response, expected, 'should collect expected hook fields');
   }
   catch(e) { t.ifErr(e); }
@@ -99,7 +106,7 @@ test('Single before hook should works', async (t) => {
     break: 'Before hook catch someParam param',
   };
   try {
-    const response = await request.get('http://localhost:3000/some/single-before-hook/someParam', options);
+    const response = await request.get(`${url}/some/single-before-hook/someParam`, options);
     t.deepEqual(response, expected, 'should collect expected before hook fields');
   }
   catch(e) { t.ifErr(e); }
@@ -111,7 +118,7 @@ test('Single after hook should works', async (t) => {
     break: 'After hook catch someParam param',
   };
   try {
-    const response = await request.get('http://localhost:3000/some/single-after-hook/someParam', options);
+    const response = await request.get(`${url}/some/single-after-hook/someParam`, options);
     t.deepEqual(response, expected, 'should collect expected after hook fields');
   }
   catch(e) { t.ifErr(e); }
@@ -125,7 +132,7 @@ test('Should return unauthorized', async (t) => {
     name: 'UnauthorizedError'
   }
   try {
-    await request.post('http://localhost:3000/auth', options);
+    await request.post(`${url}/auth`, options);
   }
   catch({ error }) {
     t.ok(error);
@@ -136,7 +143,7 @@ test('Should return unauthorized', async (t) => {
 
 test('Should return auth token for John Doe', async (t) => {
   try {
-    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=John Doe&password=qwerty9', options);
+    const { token } = await request.get(`${url}/auth/sign-in?name=John Doe&password=qwerty9`, options);
     t.ok(token, 'should exist token');
   }
   catch(e) { t.ifErr(e); }
@@ -145,7 +152,7 @@ test('Should return auth token for John Doe', async (t) => {
 
 test('Should return auth token for Jane Doe', async (t) => {
   try {
-    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const { token } = await request.get(`${url}/auth/sign-in?name=Jane Doe&password=qwerty8`, options);
     t.ok(token, 'should exist token');
   }
   catch(e) { t.ifErr(e); }
@@ -154,18 +161,18 @@ test('Should return auth token for Jane Doe', async (t) => {
 
 test('Should add new user with John Doe token', async (t) => {
   const expected = {
-    name: 'JohnDoe`sUser',
+    name: 'JohnDoe\'sUser',
     role: 'default',
   }
   try {
-    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=John Doe&password=qwerty9', options);
+    const { token } = await request.get(`${url}/auth/sign-in?name=John Doe&password=qwerty9`, options);
     const headers = {
       'authorization': token
     }
-    const { success } = await request.post('http://localhost:3000/auth?name=JohnDoe`sUser&password=test&role=default',
+    const { success } = await request.post(`${url}/auth?name=JohnDoe'sUser&password=test&role=default`,
                                             Object.assign({}, options, { headers }));
 
-    const data = await request.get('http://localhost:3000/auth/JohnDoe`sUser', Object.assign({}, options, { headers }))
+    const data = await request.get(`${url}/auth/JohnDoe'sUser`, Object.assign({}, options, { headers }))
     t.ok(token, 'should exist token');
     t.true(success, 'success add user')
     t.deepEqual(data, expected, 'Should get JohnDoe`sUser')
@@ -176,20 +183,20 @@ test('Should add new user with John Doe token', async (t) => {
 
 test('Should return Jane`s Doe user on /me', async (t) => {
   const expected = {
-    name: 'JaneDoe`sUser',
+    name: 'JaneDoe\'sUser',
     role: 'default',
   }
   try {
-    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const { token } = await request.get(`${url}/auth/sign-in?name=Jane Doe&password=qwerty8`, options);
     const headers = {
       'authorization': token
     }
-    const { success } = await request.post('http://localhost:3000/auth?name=JaneDoe`sUser&password=test&role=default',
+    const { success } = await request.post(`${url}/auth?name=JaneDoe'sUser&password=test&role=default`,
                                             Object.assign({}, options, { headers }));
 
-    const data = await request.get('http://localhost:3000/auth/sign-in?name=JaneDoe`sUser&password=test', options);
+    const data = await request.get(`${url}/auth/sign-in?name=JaneDoe'sUser&password=test`, options);
     headers['authorization'] = data.token
-    const user = await request.get('http://localhost:3000/auth/me', Object.assign({}, options, { headers }));
+    const user = await request.get(`${url}/auth/me`, Object.assign({}, options, { headers }));
     t.ok(token, 'should exist token');
     t.true(success, 'success add user')
     t.deepEqual(user, expected, 'Should get JaneDoe`sUser')
@@ -205,16 +212,16 @@ test('Should return Forbidden Error', async (t) => {
     name: 'ForbiddenError'
   }
   try {
-    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const { token } = await request.get(`${url}/auth/sign-in?name=Jane Doe&password=qwerty8`, options);
     const headers = {
       'authorization': token
     }
-    await request.post('http://localhost:3000/auth?name=test&password=test&role=test',
+    await request.post(`${url}/auth?name=test&password=test&role=test`,
                                             Object.assign({}, options, { headers }));
 
-    const data = await request.get('http://localhost:3000/auth/sign-in?name=test&password=test', options);
+    const data = await request.get(`${url}/auth/sign-in?name=test&password=test`, options);
     headers['authorization'] = data.token
-    await request.get('http://localhost:3000/auth/Jane Doe', Object.assign({}, options, { headers }));
+    await request.get(`${url}/auth/Jane Doe`, Object.assign({}, options, { headers }));
   }
   catch({ error }) {
     t.ok(error);
@@ -227,17 +234,16 @@ test('Should return list users', async (t) => {
   const expected = [
     { name: 'John Doe', role: 'super' },
     { name: 'Jane Doe', role: 'admin' },
-    { name: 'JohnDoe`sUser', role: 'default' },
-    { name: 'JaneDoe`sUser', role: 'default' },
+    { name: 'JohnDoe\'sUser', role: 'default' },
+    { name: 'JaneDoe\'sUser', role: 'default' },
     { name: 'test', role: 'test' }
   ]
   try {
-    const { token } = await request.get('http://localhost:3000/auth/sign-in?name=Jane Doe&password=qwerty8', options);
+    const { token } = await request.get(`${url}/auth/sign-in?name=Jane Doe&password=qwerty8`, options);
     const headers = {
       'authorization': token
     }
-    const data = await request.get('http://localhost:3000/auth',
-                                            Object.assign({}, options, { headers }));
+    const data = await request.get(`${url}/auth`, Object.assign({}, options, { headers }));
 
     t.ok(token, 'should exist token');
     t.deepEqual(data, expected, 'Should get users')
@@ -253,7 +259,7 @@ test('should catch custom error', async (t) => {
     message: "custom error"
   };
   try {
-    await request.get('http://localhost:3000/some/custom-error', options);
+    await request.get(`${url}/some/custom-error`, options);
   }
   catch({ error }) { t.deepEqual(error, expected, 'catch custom error'); }
   finally { t.end(); }
@@ -266,9 +272,22 @@ test('should catch internal error', async (t) => {
     message: 'Cannot read property \'charCodeAt\' of undefined'
   };
   try {
-    await request.get('http://localhost:3000/some/internal-error', options);
+    await request.get(`${url}/some/internal-error`, options);
   }
   catch({ error }) { t.deepEqual(error, expected, 'catch internal error'); }
+  finally { t.end(); }
+})
+
+test('should return correct data from injected services without decorators', async (t) => {
+  const expected = {
+    injectedService: 'injected as class',
+    iInjectedService: 'injected as interface'
+  };
+  try {
+    const data = await request.get(`${url}/some/from-external-service`, options);
+    t.deepEqual(data, expected, 'Should external data');
+  }
+  catch(e) { t.ifErr(e); }
   finally { t.end(); }
 })
 

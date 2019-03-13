@@ -1,19 +1,26 @@
-import { Service, Application } from "tsnode-express";
+import { Service } from "tsnode-express";
 import { ConfigProvider } from "tsnode-express";
-import { RedisService, IRedis } from "../redis.service";
+import { InjectedService, IInjectedService } from "../external.service";
 
 @Service()
 export class SomeService {
-  constructor(public configProvider: ConfigProvider, redis: RedisService, iRedis: IRedis) {
-    console.dir(iRedis)
-    iRedis.on('connect', () => {
-      console.log('CONNECT !!!!!!!!!!!!!!!!!!!!!!!')
-    })
-  }
+  constructor(
+    public configProvider: ConfigProvider,
+    public injectedService: InjectedService,
+    public iInjectedService: IInjectedService
+  ) {}
+
   getSomeData() {
     return {
       data: "from service",
       configField: this.configProvider.test
+    }
+  }
+
+  getInjectedData() {
+    return {
+      injectedService: this.injectedService.stub,
+      iInjectedService: this.iInjectedService.stub,
     }
   }
 }

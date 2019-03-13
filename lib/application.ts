@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { IRouterHandler, IRouterMatcher } from 'express';
 import Router from 'express';
 import bodyParser from 'body-parser';
 import { NotFoundError, InternalServerError, ExtendedError, UnauthorizedError } from 'ts-http-errors';
@@ -32,7 +32,9 @@ class Application {
 
   protected _controllers: Map<string, IController>;
 
-  protected acyncActions: Map<string, Promise<any>> = new Map<string, Promise<any>>()
+  protected pendingInjections: Map<string, Promise<any>> = new Map<string, Promise<any>>()
+
+  public use: IRouterHandler<Application> & IRouterMatcher<Application>;
 
   constructor(cb?: Function) {
     this.express = express();
@@ -45,14 +47,18 @@ class Application {
 
     this._injector.setInstance(this);
 
-    cb ? cb(this.express) : void 0
+    cb ? cb(this.express) : void 0;
 
-    this.express.use('/health', this.health.bind(this));
-    this.express.use(bodyParser.json());
-    this.express.use(bodyParser.urlencoded({ extended: false }));
+    this.use = function (): Application {
+      this.express.use(...arguments)
+      return this;
+    };
+
+    this.use('/health', this.health.bind(this));
+    this.use(bodyParser.json());
+    this.use(bodyParser.urlencoded({ extended: false }));
 
     this.configProvider = new ConfigProvider({});
-    this._injector.setInstance(this.configProvider);
     return Application._instance || (Application._instance = this);
   }
 
@@ -60,10 +66,12 @@ class Application {
     return this._controllers;
   }
 
-  public use(cb?: Function): Application {
-    this.express.use(...arguments);
-    return this;
-  }
+  // public use(fn: Function): Application;
+  // public use(string: string, fn: Function): Application;
+  // public use(...args: any[]): Application {
+  //   this.express.use(...arguments);
+  //   return this;
+  // }
 
   public registerModule(...args): Application {
     return this;
@@ -76,7 +84,7 @@ class Application {
                               req.query[this.authorizationOptions.authorizationQueryParam] ||
                               req.body[this.authorizationOptions.authorizationBodyField];
         const authTarget: AuthTarget = new AuthTarget(req, this.controllers);
-        if(!token) throw new UnauthorizedError();
+        if(!token) throw new UnauthorizedError('Unauthorized');
         req.auth = await this.authorizationProvider.instance.verify(token, authTarget);
       }
       next();
@@ -97,7 +105,7 @@ class Application {
   }
 
   public useConfig(cb: Function) : Application {
-    this.acyncActions.set('configPromise', cb ? cb(this.configProvider) : Promise.resolve());
+    this.pendingInjections.set('ConfigProvider', cb ? cb(this.configProvider) : Promise.resolve());
     return this;
   }
 
@@ -176,7 +184,7 @@ class Application {
               arguments[2].call();
             }
 
-          this.express.use(basePath, router[method](
+          this.use(basePath, router[method](
             path,
             [logMiddleware, authMiddleware].filter(m => m),
             handler
@@ -186,29 +194,33 @@ class Application {
         }));
   }
 
-  public inject<T>(name: string, type: T, cb: Function): Application;
-  public inject<T>(target: Type<T>, opts: any): Application;
+  public inject<T>(name: string, cb: Function): Application;
   public inject<T>(instance: T): Application;
-  public inject<T>(...args: any[]): Application {
+  public inject(): Application {
     arguments.length == 1 && this._injector.setInstance(arguments[0]);
-    arguments.length == 3 && this._injector.setInstance(arguments[0], arguments[2]());
-    arguments.length == 2 && (() => {
-      const target: Type<any> = arguments[1];
-      this._injector.setInstance(new target(arguments[1]));
-    }) 
+    arguments.length == 2 && this.pendingInjections.set(arguments[0], arguments[1] ? arguments[1]() : Promise.resolve());
     return this;
   }
 
-  public start(cb: Function) : void {
+  public async start(cb: Function) : Promise<void> {
 
-    // this.inject<Error>(new Error());
+    await Promise.all([...this.pendingInjections.entries()]
+      .filter(([key]) => key !== 'ConfigProvider')
+      .map(async ([key, injectionPromise]) => {
+        const injection: Type<any> = await injectionPromise;
+        return this._injector.setInstance(key, injection)
+      }));
+
+    await this.pendingInjections.get('ConfigProvider')
+    this._injector.setInstance(this.configProvider);
+
     if(this.authorizationProvider) {
       this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
     }
     this.controllers.forEach(this.buildController.bind(this));
-    this.express.use(this.handleNotFound.bind(this));
-    this.express.use(this.handleError.bind(this));
-    cb(this.express);
+    this.use(this.handleNotFound.bind(this));
+    this.use(this.handleError.bind(this));
+    cb(this.express, this.configProvider);
   }
 }
 
