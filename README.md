@@ -7,7 +7,6 @@ npm install tsnode-express --save
 ```
 
 ### Configure tsconfig.json
-
 ```
 {
   "compilerOptions": {
@@ -28,14 +27,17 @@ Create index.ts file
 import http from 'http';
 import { Application } from 'tsnode-express';
 
-const application = new Application()
+const application = new Application();
 
-application.start((express) => {
+application.start((express, config) => {
   http.createServer(express).listen(3000, () => {
     console.log('Server listening')
   })
 })
 ```
+
+##### Notice the `start` method is async
+##### `start` method pass to callback express and config provider
 
 ### Compile code with ts-node
 ```
@@ -127,6 +129,7 @@ application.useConfig((config) => {
   config.test = 'test config field';
 });
 ```
+##### Notice the `useConfig` method can be async and used in chain
 
 #### Modify your service or controller
 
@@ -370,6 +373,17 @@ const application = new Application((express) => {
 });
 ```
 
+#### Application has his own wrapper for `express.use` and can be used in chain
+```typescript
+const application = new Application();
+
+application
+  .use(cors())
+  .use(/** another handler */)
+  .use(/** another handler */)
+});
+```
+
 ### Error Handling
 The applications uses as error lib https://www.npmjs.com/package/ts-http-errors
 
@@ -422,8 +436,57 @@ import * as moduleB from './moduleB';
 
 const application = new Application();
 
-application.registerModule(moduleA);
-application.registerModule(moduleB);
+application
+  .registerModule(moduleA);
+  .registerModule(moduleB);
 ```
 
-### Doc is not finished yet, but you can see full example on github
+### External Injections
+Application support external injections throuth
+
+```typescript
+public inject<T>(name: string, cb: Function): Application;
+public inject<T>(instance: T): Application;
+```
+
+So you can inject to application already creates instances or use factory to create incjection.
+Factory can be async
+
+Exapmple
+```typescript
+abstract class IInjectedService {
+  stub: string
+};
+
+class InjectedService extends IInjectedService {
+  stub: string
+  constructor(opts) {
+    super();
+    Object.assign(this, opts);
+  }
+}
+
+const injectedService: InjectedService = new InjectedService({ 
+  stub: 'injected as class'
+});
+
+const application = new Application();
+
+application
+  .inject<InjectedService>(injectedService)
+  .inject<IInjectedService>('IInjectedService', async () => ({ stub: 'injected as interface' }))
+```
+
+And after application start those can be available on services or controllers
+
+```typescript
+@Service()
+class SomeService {
+  constructor(
+    public injectedService: InjectedService,
+    public iInjectedService: IInjectedService
+  ) {}
+```
+#### As in typescript interfaces can not be reflected I propose using empty abstract classes
+
+### Doc is not finished yet. Please you look at the full example on github

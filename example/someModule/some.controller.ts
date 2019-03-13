@@ -65,4 +65,9 @@ export class SomeController {
     let unknown: string;
     unknown.charCodeAt(0);
   }
+
+  @Get('/from-external-service')
+  fromExternalServices(args: IRequestArguments) {
+    return this.someService.getInjectedData();
+  }
 }
