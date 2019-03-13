@@ -6,6 +6,7 @@ import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
 import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
+import { type } from 'os';
 
 class Application {
 
@@ -30,6 +31,8 @@ class Application {
   protected configProvider: ConfigProvider;
 
   protected _controllers: Map<string, IController>;
+
+  protected acyncActions: Map<string, Promise<any>> = new Map<string, Promise<any>>()
 
   constructor(cb?: Function) {
     this.express = express();
@@ -57,7 +60,14 @@ class Application {
     return this._controllers;
   }
 
-  public registerModule(...args): void {}
+  public use(cb?: Function): Application {
+    this.express.use(...arguments);
+    return this;
+  }
+
+  public registerModule(...args): Application {
+    return this;
+  }
 
   protected async authMiddleware(req: IRequest, res: IResponse, next: Function) : Promise<void> {
     try {
@@ -75,7 +85,7 @@ class Application {
     }
   }
 
-  public useAuthorizationProvider<T>(provider: Type<T>, cb?: Function) : void {
+  public useAuthorizationProvider<T>(provider: Type<T>, cb?: Function) : Application {
     this.enableAthorization = true;
     this._injector.set(provider);
     this.authorizationProvider = {
@@ -83,10 +93,12 @@ class Application {
     };
     this.authorizationOptions = new AuthOptions();
     cb ? cb(this.authorizationOptions) : void 0;
+    return this;
   }
 
-  public useConfig(cb: Function) : void {
-    cb ? cb(this.configProvider) : void 0;
+  public useConfig(cb: Function) : Application {
+    this.acyncActions.set('configPromise', cb ? cb(this.configProvider) : Promise.resolve());
+    return this;
   }
 
   protected health() {
@@ -174,7 +186,22 @@ class Application {
         }));
   }
 
+  public inject<T>(name: string, type: T, cb: Function): Application;
+  public inject<T>(target: Type<T>, opts: any): Application;
+  public inject<T>(instance: T): Application;
+  public inject<T>(...args: any[]): Application {
+    arguments.length == 1 && this._injector.setInstance(arguments[0]);
+    arguments.length == 3 && this._injector.setInstance(arguments[0], arguments[2]());
+    arguments.length == 2 && (() => {
+      const target: Type<any> = arguments[1];
+      this._injector.setInstance(new target(arguments[1]));
+    }) 
+    return this;
+  }
+
   public start(cb: Function) : void {
+
+    // this.inject<Error>(new Error());
     if(this.authorizationProvider) {
       this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
     }

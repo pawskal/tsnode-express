@@ -19,18 +19,23 @@ export default class Injector {
   }
 
   public resolve<T>(targetName: string): T {
+    console.log(targetName)
     if(this.instances.has(targetName)){
       return this.instances.get(targetName);
     }
     const target: Type<T> = this.injections.get(targetName);
+    console.log(target)
     const tokens: Array<FunctionConstructor> = Reflect.getMetadata('design:paramtypes', target) || [];
     const instances: Array<T> = tokens.map(t => this.resolve<any>(t.name)) || [];
     this.instances.set(targetName, new target(...instances))
     return this.instances.get(targetName);
   }
 
-  public setInstance(target: any): void {
-    this.instances.set(target.constructor.name, target);
+  public setInstance(name: string, target: any): void;
+  public setInstance(target: any): void;
+  public setInstance(): void {
+    arguments.length == 2 && this.instances.set(arguments[0], arguments[1]);
+    arguments.length == 1 && this.instances.set(arguments[0].constructor.name, arguments[0]);
   }
 
   public set(target: Type<any>): void {
