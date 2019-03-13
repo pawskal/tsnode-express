@@ -53,7 +53,9 @@
     "@types/node": "^9.4.7",
     "@types/reflect-metadata": "^0.1.0",
     "express": "^4.16.3",
+    "fakeredis": "^2.0.0",
     "nodejs-lite-logger": "0.0.13",
+    "redis": "^2.8.0",
     "reflect-metadata": "^0.1.12",
     "ts-http-errors": "^1.0.0",
     "ts-node": "^5.0.1",
@@ -61,6 +63,7 @@
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^7.2.7",
+    "@types/redis": "^2.8.10",
     "@types/request": "^2.47.0",
     "@types/request-promise-native": "^1.0.14",
     "@types/tape": "^4.2.32",

@@ -7,9 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 ### Changed
-Refactor auth
-Removed AuthMiddleware class
-Removed dist folder
 #### Breaking changes
 
 ## 0.0.9 - 2019-03-03
