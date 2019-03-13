@@ -66,13 +66,6 @@ class Application {
     return this._controllers;
   }
 
-  // public use(fn: Function): Application;
-  // public use(string: string, fn: Function): Application;
-  // public use(...args: any[]): Application {
-  //   this.express.use(...arguments);
-  //   return this;
-  // }
-
   public registerModule(...args): Application {
     return this;
   }
