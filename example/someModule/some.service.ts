@@ -7,7 +7,6 @@ export class SomeService {
   constructor(
     public configProvider: ConfigProvider,
     public injectedService: InjectedService,
-    public iInjectedService: IInjectedService
   ) {}
 
   getSomeData() {
@@ -20,7 +19,6 @@ export class SomeService {
   getInjectedData() {
     return {
       injectedService: this.injectedService.stub,
-      iInjectedService: this.iInjectedService.stub,
     }
   }
 }

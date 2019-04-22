@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import {RedisClient} from "redis";
+import { success, warning, error, info } from 'nodejs-lite-logger';
 
 export interface IProviderDefinition<T> {
   name: string;
@@ -75,5 +77,32 @@ export interface IAuthTarget extends IAuthRole {
   path: string;
   functionName: string;
   fullPath?: string; 
+}
+
+export abstract class ITransportProvider {
+  abstract publish(path: string, args: IRequestArguments): void;
+  abstract subscribe(channelName: string): void;
+  abstract on(eventName: string, cb: Function): void;
+}
+
+export abstract class IRedisTransportProvider extends ITransportProvider {
+  protected redisClient: RedisClient;
+  protected channel: string;
+
+  on(eventName: string, cb: any){
+    info(`${eventName}`)
+    this.redisClient.on(`message`, (data) => console.log('DATA', data));
+
+  }
+
+  private eventHandler(eventName: string, data: string, cb: any){
+    console.log(eventName, data, '@@@@@@@@@@@@@@@@@@@')
+  }
+
+}
+
+export interface ITransportEvent extends IRequestArguments {
+  requestChannel: string,
+  requestId: string,
 }
   

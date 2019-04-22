@@ -16,6 +16,8 @@ import {
 
 import {
   IAuthProvider,
+  ITransportProvider,
+  IRedisTransportProvider,
   IAuthOptions,
   IAuthTarget,
   IRequest,
@@ -33,6 +35,8 @@ export type IRequestArguments = IRequestArguments;
 export {
   Application,
   ConfigProvider,
+  ITransportProvider,
+  IRedisTransportProvider,
   Service,
   Controller,
   Authorization,

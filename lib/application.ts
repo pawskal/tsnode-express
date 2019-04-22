@@ -4,11 +4,22 @@ import bodyParser from 'body-parser';
 import { NotFoundError, InternalServerError, ExtendedError, UnauthorizedError } from 'ts-http-errors';
 import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
-import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
+import {
+  IController,
+  Type,
+  IAuthProvider,
+  IResponse,
+  IRoutes,
+  IProviderDefinition,
+  IRequest,
+  ITransportProvider
+} from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
 import { type } from 'os';
 
 class Application {
+
+  protected httpDisabled: boolean = false;
 
   public get Injector(): Injector {
     return this._injector;
@@ -22,8 +33,6 @@ class Application {
 
   protected router: any;
 
-  protected authorizationProvider : IProviderDefinition<IAuthProvider>;
-
   protected enableAthorization: boolean = false;
 
   protected authorizationOptions: AuthOptions;
@@ -35,6 +44,10 @@ class Application {
   protected pendingInjections: Map<string, Promise<any>> = new Map<string, Promise<any>>()
 
   public use: IRouterHandler<Application> & IRouterMatcher<Application>;
+
+  protected authorizationProvider?: IProviderDefinition<IAuthProvider>;
+
+  protected transportProvider?: IProviderDefinition<ITransportProvider>;
 
   constructor(cb?: Function) {
     this.express = express();
@@ -187,15 +200,70 @@ class Application {
         }));
   }
 
+  protected buildTransportController(definition: IController, name: string) : void {
+    const { configProvider }: ConfigProvider = Application._instance;
+    definition.instance = Application._instance.Injector.resolve<any>(name);
+
+    const router = Router();
+    const { routes, basePath, auth, instance } = definition;
+
+    new Map<string, IRoutes>([...routes.entries()]
+        .sort(([path]: Array<any>) => path.startsWith('/:') ? 1 : -1))
+        .forEach((routes: IRoutes, path: string) =>
+            Object.keys(routes).forEach((method: string) => {
+              // this.transportProvider.instance.on(
+              //     `${method}${basePath}${path}`.replace(/\//g,':'),
+              //     ()=>{}
+              // );
+
+
+
+
+
+              // const logMiddleware = configProvider.logLevels.includes('info')
+              //     && function() {
+              //       info(
+              //           `Transport ${method.toUpperCase()}`, '\t',
+              //           `${basePath}${path}`, '\t',
+              //           'target: ', '\t',
+              //           routes[method]['origin'] && routes[method]['origin'].name || '',
+              //       );
+              //       arguments[2].call();
+              //     }
+              //
+              // configProvider.logLevels.includes('success')
+              // && success(method.toUpperCase(), '\t', `${basePath}${path}`);
+            }));
+    setTimeout(()=> {
+      this.transportProvider.instance.publish('', {})
+    }, 1000)
+  }
+
   public inject<T>(name: string, cb: Function): Application;
   public inject<T>(instance: T): Application;
   public inject(): Application {
     arguments.length == 1 && this._injector.setInstance(arguments[0]);
-    arguments.length == 2 && this.pendingInjections.set(arguments[0], arguments[1] ? arguments[1]() : Promise.resolve());
+    arguments.length == 2 && this.pendingInjections.set(arguments[0], arguments[1] ? arguments[1](this.configProvider) : Promise.resolve());
+    return this;
+  }
+
+  public disableHttp() {
+    this.httpDisabled = true;
+    return this;
+  }
+
+  public useTransportProvider<T extends ITransportProvider>(provider: Type<T>, cb?: Function) : Application {
+    this._injector.set(provider);
+    this.transportProvider = {
+      name: provider.name
+    };
     return this;
   }
 
   public async start(cb: Function) : Promise<void> {
+
+    await this.pendingInjections.get('ConfigProvider')
+    this._injector.setInstance(this.configProvider);
 
     await Promise.all([...this.pendingInjections.entries()]
       .filter(([key]) => key !== 'ConfigProvider')
@@ -204,16 +272,24 @@ class Application {
         return this._injector.setInstance(key, injection)
       }));
 
-    await this.pendingInjections.get('ConfigProvider')
-    this._injector.setInstance(this.configProvider);
+
 
     if(this.authorizationProvider) {
       this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
     }
-    this.controllers.forEach(this.buildController.bind(this));
+
+    if(this.transportProvider) {
+      this.transportProvider.instance =  this._injector.resolve<ITransportProvider>(this.transportProvider.name);
+      this.controllers.forEach(this.buildTransportController.bind(this));
+    }
+
+    if(!this.httpDisabled){
+      this.controllers.forEach(this.buildController.bind(this));
+    }
+
     this.use(this.handleNotFound.bind(this));
     this.use(this.handleError.bind(this));
-    cb(this.express, this.configProvider);
+    cb(this.express, this.configProvider, this.transportProvider.instance);
   }
 }
 
