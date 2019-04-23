@@ -105,4 +105,9 @@ export interface ITransportEvent extends IRequestArguments {
   requestChannel: string,
   requestId: string,
 }
+
+export interface ITransportDecoratorOptions {
+  channel: string,
+  auto: boolean
+}
   

@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { Type, IController, IRoutes, IAuthOption, IAuthRole } from './interfaces';
+import { Type, IController, IRoutes, IAuthOption, IAuthRole, ITransportDecoratorOptions } from './interfaces';
 
 export default class Injector {
   public static getInstance(): Injector {
@@ -68,6 +68,19 @@ export default class Injector {
   public RouteDecorator(type: string, method: string, path: string, authOption?: IAuthOption) : Function {
     return (target: Type<any>, fname: string, descriptor: PropertyDescriptor) : void => 
       this.defineRoute(method.toLowerCase(), type, target, path, fname, descriptor, authOption);
+  }
+
+  public TransportDecorator(options: ITransportDecoratorOptions): Function {
+    return (target: Type<any>, fname: string) : void => {
+      const routes = this.controllers.get(target.constructor.name).routes;
+      routes.forEach((value: IRoutes, key: string) => {
+        Object.entries(value).forEach(([methodName, value]) => {
+          if (value.origin.name == fname) {
+            routes.get(key)[methodName].transport = options; // SET !!!!!!!!!
+          }
+        });
+      });
+    }
   }
 
   private defineRoute(method: string, type: string, target: Type<any>,

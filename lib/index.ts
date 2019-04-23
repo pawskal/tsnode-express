@@ -11,7 +11,8 @@ import {
   Patch, 
   Delete,
   Before,
-  After
+  After,
+  Transport
 } from './decorators';
 
 import {
@@ -47,4 +48,5 @@ export {
   Delete,
   Before,
   After,
+  Transport
 };

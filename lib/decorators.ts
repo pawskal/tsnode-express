@@ -4,7 +4,8 @@ const {
   ControllerDecorator,
   AuthorizationDecorator,
   ServicDecorator,
-  RouteDecorator
+  RouteDecorator,
+  TransportDecorator,
 } = Injector.getInstance();
 
 export const Controller: Function = ControllerDecorator.bind(Injector.getInstance());
@@ -26,3 +27,5 @@ export const Delete: Function = RouteDecorator.bind(Injector.getInstance(), 'ori
 export const Before: Function = RouteDecorator.bind(Injector.getInstance(), 'before');
 
 export const After: Function = RouteDecorator.bind(Injector.getInstance(), 'after');
+
+export const Transport: Function = TransportDecorator.bind(Injector.getInstance());
