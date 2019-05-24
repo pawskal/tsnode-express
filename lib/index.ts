@@ -12,19 +12,20 @@ import {
   Delete,
   Before,
   After,
-  Transport
 } from './decorators';
 
 import {
   IAuthProvider,
-  ITransportProvider,
-  IRedisTransportProvider,
+  IPlugin,
   IAuthOptions,
   IAuthTarget,
   IRequest,
   IResponse,
   IRequestArguments,
+  HttpMethods
 } from './interfaces';
+
+import Injector from './injector';
 
 export type IAuthProvider = IAuthProvider;
 export type IAuthOptions = IAuthOptions;
@@ -36,8 +37,7 @@ export type IRequestArguments = IRequestArguments;
 export {
   Application,
   ConfigProvider,
-  ITransportProvider,
-  IRedisTransportProvider,
+  IPlugin,
   Service,
   Controller,
   Authorization,
@@ -48,5 +48,6 @@ export {
   Delete,
   Before,
   After,
-  Transport
+  HttpMethods,
+  Injector
 };

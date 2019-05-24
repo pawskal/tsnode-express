@@ -5,17 +5,16 @@ import { NotFoundError, InternalServerError, ExtendedError, UnauthorizedError } 
 import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
 import {
-  IController,
-  Type,
-  IAuthProvider,
-  IResponse,
-  IRoutes,
-  IProviderDefinition,
-  IRequest,
-  ITransportProvider
+    IController,
+    Type,
+    IAuthProvider,
+    IResponse,
+    IRoutes,
+    IProviderDefinition,
+    IRequest,
+    IPlugin,
 } from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
-import { type } from 'os';
 
 class Application {
 
@@ -47,7 +46,9 @@ class Application {
 
   protected authorizationProvider?: IProviderDefinition<IAuthProvider>;
 
-  protected transportProvider?: IProviderDefinition<ITransportProvider>;
+  protected autoInjections: string[] = [];
+
+  protected plugins: string[] = [];
 
   constructor(cb?: Function) {
     this.express = express();
@@ -200,43 +201,17 @@ class Application {
         }));
   }
 
-  protected buildTransportController(definition: IController, name: string) : void {
-    const { configProvider }: ConfigProvider = Application._instance;
-    definition.instance = Application._instance.Injector.resolve<any>(name);
-
-    const router = Router();
-    const { routes, basePath, auth, instance } = definition;
-
-    new Map<string, IRoutes>([...routes.entries()]
-        .sort(([path]: Array<any>) => path.startsWith('/:') ? 1 : -1))
-        .forEach((routes: IRoutes, path: string) =>
-            Object.keys(routes).forEach((method: string) => {
-              // this.transportProvider.instance.on(
-              //     `${method}${basePath}${path}`.replace(/\//g,':'),
-              //     ()=>{}
-              // );
+  public autoResolve<T>(target: Type<T>): Application {
+      this.autoInjections.push(target.name);
+      this._injector.set(target);
+      return this;
+  }
 
 
-
-
-
-              // const logMiddleware = configProvider.logLevels.includes('info')
-              //     && function() {
-              //       info(
-              //           `Transport ${method.toUpperCase()}`, '\t',
-              //           `${basePath}${path}`, '\t',
-              //           'target: ', '\t',
-              //           routes[method]['origin'] && routes[method]['origin'].name || '',
-              //       );
-              //       arguments[2].call();
-              //     }
-              //
-              // configProvider.logLevels.includes('success')
-              // && success(method.toUpperCase(), '\t', `${basePath}${path}`);
-            }));
-    setTimeout(()=> {
-      this.transportProvider.instance.publish('', {})
-    }, 1000)
+  public usePlugin(plugin: any): Application {
+      this.plugins.push(plugin.name);
+      this._injector.set(plugin);
+      return this;
   }
 
   public inject<T>(name: string, cb: Function): Application;
@@ -252,14 +227,6 @@ class Application {
     return this;
   }
 
-  public useTransportProvider<T extends ITransportProvider>(provider: Type<T>, cb?: Function) : Application {
-    this._injector.set(provider);
-    this.transportProvider = {
-      name: provider.name
-    };
-    return this;
-  }
-
   public async start(cb: Function) : Promise<void> {
 
     await this.pendingInjections.get('ConfigProvider')
@@ -272,15 +239,13 @@ class Application {
         return this._injector.setInstance(key, injection)
       }));
 
+    this.autoInjections.forEach((inj: string)=> this._injector.resolve(inj));
+
+    this.plugins.forEach((inj: string)=> this._injector.resolve(inj));
 
 
     if(this.authorizationProvider) {
       this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
-    }
-
-    if(this.transportProvider) {
-      this.transportProvider.instance =  this._injector.resolve<ITransportProvider>(this.transportProvider.name);
-      this.controllers.forEach(this.buildTransportController.bind(this));
     }
 
     if(!this.httpDisabled){
@@ -289,7 +254,7 @@ class Application {
 
     this.use(this.handleNotFound.bind(this));
     this.use(this.handleError.bind(this));
-    cb(this.express, this.configProvider, this.transportProvider.instance);
+    cb(this.express, this.configProvider);
   }
 }
 

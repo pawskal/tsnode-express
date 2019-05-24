@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 import { AuthService } from "./auth.service";
-import { Transport, Controller, Authorization, IRequestArguments, Get, Post, ConfigProvider } from "tsnode-express";
+import { Controller, Authorization, IRequestArguments, Get, Post, ConfigProvider } from "tsnode-express";
 @Authorization({ roles: ['admin', 'super'] })
 @Controller('auth')
 export class AuthController {
@@ -15,8 +15,7 @@ export class AuthController {
     this.authService.addUser(query);
     return { success: true };
   }
- 
-  @Transport({ auto: false, channel: 'auth' })
+
   @Get('/')
   getUsers() {
     return this.authService.getUsers();

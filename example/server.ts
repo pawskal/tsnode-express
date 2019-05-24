@@ -5,11 +5,8 @@ import {Application, ConfigProvider} from 'tsnode-express';
 import * as SomeModule from './someModule';
 import * as AuthModule from './authModule';
 
-import redis, {RedisClient} from 'redis';
-
 import { AuthProvider } from './authProvider';
 import { InjectedService, IInjectedService } from './external.service';
-import {TransportProvider} from "./transportProvider";
 import AsyncRedis from "./asyncRedis";
 
 const injectedService: InjectedService = new InjectedService({ 
@@ -38,11 +35,11 @@ application
   .use(cors())
   .useConfig(setConfig)
   .inject<InjectedService>(injectedService)
-  .inject<AsyncRedis>('AsyncRedis', async (config: ConfigProvider) => {
+    .inject<IInjectedService>('IInjectedService', async () => ({ stub: 'injected as interface' }))
+    .inject<AsyncRedis>('AsyncRedis', async (config: ConfigProvider) => {
       return new AsyncRedis({ host: config.redisHost, port: config.redisPort, password: config.redisPassword });
   })
   .useAuthorizationProvider<AuthProvider>(AuthProvider)
-  .useTransportProvider<TransportProvider>(TransportProvider)
   .registerModule(SomeModule)
   .registerModule(AuthModule)
   .disableHttp()

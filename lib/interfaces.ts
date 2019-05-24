@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import {RedisClient} from "redis";
 import { success, warning, error, info } from 'nodejs-lite-logger';
+import {Headers} from "request";
+import Application from "./application";
 
 export interface IProviderDefinition<T> {
   name: string;
@@ -63,6 +65,7 @@ export interface IRequestArguments {
   params?: any;
   query?: any;
   auth?: any;
+  headers?: IRequestHeaders
 }
 
 export interface IAuthRole {
@@ -79,35 +82,21 @@ export interface IAuthTarget extends IAuthRole {
   fullPath?: string; 
 }
 
-export abstract class ITransportProvider {
-  abstract publish(path: string, args: IRequestArguments): void;
-  abstract subscribe(channelName: string): void;
-  abstract on(eventName: string, cb: Function): void;
+export interface IRequestHeaders {
+    [key: string]: string
 }
 
-export abstract class IRedisTransportProvider extends ITransportProvider {
-  protected redisClient: RedisClient;
-  protected channel: string;
-
-  on(eventName: string, cb: any){
-    info(`${eventName}`)
-    this.redisClient.on(`message`, (data) => console.log('DATA', data));
-
-  }
-
-  private eventHandler(eventName: string, data: string, cb: any){
-    console.log(eventName, data, '@@@@@@@@@@@@@@@@@@@')
-  }
-
+export enum HttpMethods {
+ GET = 'GET',
+ HEAD = 'HEAD',
+ POST = 'POST',
+ PUT = 'PUT',
+ DELETE = 'DELETE',
+ PATCH = 'PATCH',
+ OPTIONS = 'OPTIONS'
 }
 
-export interface ITransportEvent extends IRequestArguments {
-  requestChannel: string,
-  requestId: string,
-}
-
-export interface ITransportDecoratorOptions {
-  channel: string,
-  auto: boolean
+export interface IPlugin {
+  application: Application;
 }
   

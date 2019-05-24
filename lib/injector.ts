@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { Type, IController, IRoutes, IAuthOption, IAuthRole, ITransportDecoratorOptions } from './interfaces';
+import {Type, IController, IRoutes, IAuthOption, IAuthRole } from './interfaces';
 
 export default class Injector {
   public static getInstance(): Injector {
@@ -13,6 +13,8 @@ export default class Injector {
   private instances: Map<string, any> = new Map<string, any>();
 
   public controllers: Map<string, IController> = new Map<string, IController>();
+
+  public plugins: Map<string, any> = new Map<string, any>();
 
   private constructor() {
     return Injector._instance || (Injector._instance = this);
@@ -70,19 +72,6 @@ export default class Injector {
       this.defineRoute(method.toLowerCase(), type, target, path, fname, descriptor, authOption);
   }
 
-  public TransportDecorator(options: ITransportDecoratorOptions): Function {
-    return (target: Type<any>, fname: string) : void => {
-      const routes = this.controllers.get(target.constructor.name).routes;
-      routes.forEach((value: IRoutes, key: string) => {
-        Object.entries(value).forEach(([methodName, value]) => {
-          if (value.origin.name == fname) {
-            routes.get(key)[methodName].transport = options; // SET !!!!!!!!!
-          }
-        });
-      });
-    }
-  }
-
   private defineRoute(method: string, type: string, target: Type<any>,
                       defaultPath: string, fname: string, descriptor: PropertyDescriptor, authOption?: IAuthOption) : void {
     if(!this.controllers.has(target.constructor.name)) {
@@ -120,5 +109,9 @@ export default class Injector {
     } else {
       return defaultPath;
     }
+  }
+
+  public getPlugin(name: string): any {
+      return this.plugins.get(name);
   }
 }

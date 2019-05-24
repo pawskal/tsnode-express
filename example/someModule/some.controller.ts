@@ -15,7 +15,7 @@ export class SomeController {
 
   @Get('/service')
   getFromService(args: IRequestArguments) {
-    return this.someService.getSomeData()
+    return this.someService.getSomeData(args)
   }
 
   @Post('echo/:param')
