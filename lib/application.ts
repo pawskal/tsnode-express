@@ -241,7 +241,13 @@ class Application {
 
     this.autoInjections.forEach((inj: string)=> this._injector.resolve(inj));
 
-    this.plugins.forEach((inj: string)=> this._injector.resolve(inj));
+    this.plugins.forEach((inj: string)=> {
+        this._injector.resolve(inj);
+        if(!this._injector.getPlugin(inj)){
+            this._injector.plugins.set(inj, {});
+        }
+
+    });
 
 
     if(this.authorizationProvider) {

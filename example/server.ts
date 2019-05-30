@@ -42,6 +42,6 @@ application
   .useAuthorizationProvider<AuthProvider>(AuthProvider)
   .registerModule(SomeModule)
   .registerModule(AuthModule)
-  .disableHttp()
+  // .disableHttp()
 
 export default application;
