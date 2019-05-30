@@ -4,6 +4,7 @@ import http from 'http';
 import { CoreOptions } from 'request';
 import request from 'request-promise-native';
 import application from '../example/server'
+import {TestPlugin, PLUGIN_NAME } from "../example/simplePlugin";
 
 const options : CoreOptions = {
   json: true
@@ -12,10 +13,41 @@ const options : CoreOptions = {
 const url = `http://localhost:${process.env.PORT}`
 
 test('start server', async (t) => {
-  await application.start((express, configProvider) => 
-    http.createServer(express).listen(configProvider.port, () => 
-      t.end()))
+  await application
+      .usePlugin(TestPlugin)
+      .start((express, configProvider) => {
+          // console.log(application.Injector)
+          http.createServer(express).listen(configProvider.port, () =>
+              t.end())
+      }
+    );
 })
+
+test('plugin should be available', (t) =>{
+    const plugin = application.Injector.getPlugin(PLUGIN_NAME);
+    t.ok(plugin, 'Plugin should be defined');
+    t.end();
+});
+
+test('plugin decorators should work', (t)=> {
+    const plugin = application.Injector.getPlugin(PLUGIN_NAME);
+    t.deepEqual(plugin.data, ['getSuccess', 'withHooks'] , 'Should be [\'getSuccess\', \'withHooks\']');
+    t.end();
+});
+
+test('plugin instance should works', (t)=> {
+    const pluginInstance = application.Injector.resolve<TestPlugin>(PLUGIN_NAME);
+    const testParams = {test: 'testData'};
+    pluginInstance.setParams(testParams);
+    t.deepEqual(pluginInstance.params, testParams, 'Params should be equal');
+    t.end();
+});
+
+test('plugin injections should work', (t)=> {
+    const pluginInstance = application.Injector.resolve<TestPlugin>(PLUGIN_NAME);
+    t.deepEqual(pluginInstance.getConfig('test'), 'test config field', 'Config should be equal');
+    t.end();
+});
 
 test('server should be live', async (t) => {
   try {

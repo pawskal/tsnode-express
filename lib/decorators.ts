@@ -4,7 +4,7 @@ const {
   ControllerDecorator,
   AuthorizationDecorator,
   ServicDecorator,
-  RouteDecorator
+  RouteDecorator,
 } = Injector.getInstance();
 
 export const Controller: Function = ControllerDecorator.bind(Injector.getInstance());

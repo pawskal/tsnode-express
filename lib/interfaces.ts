@@ -1,4 +1,8 @@
 import { Request, Response } from 'express';
+import {RedisClient} from "redis";
+import { success, warning, error, info } from 'nodejs-lite-logger';
+import {Headers} from "request";
+import Application from "./application";
 
 export interface IProviderDefinition<T> {
   name: string;
@@ -61,6 +65,7 @@ export interface IRequestArguments {
   params?: any;
   query?: any;
   auth?: any;
+  headers?: IRequestHeaders
 }
 
 export interface IAuthRole {
@@ -75,5 +80,23 @@ export interface IAuthTarget extends IAuthRole {
   path: string;
   functionName: string;
   fullPath?: string; 
+}
+
+export interface IRequestHeaders {
+    [key: string]: string
+}
+
+export enum HttpMethods {
+ GET = 'GET',
+ HEAD = 'HEAD',
+ POST = 'POST',
+ PUT = 'PUT',
+ DELETE = 'DELETE',
+ PATCH = 'PATCH',
+ OPTIONS = 'OPTIONS'
+}
+
+export interface IPlugin {
+  application: Application;
 }
   

@@ -15,7 +15,7 @@ export class AuthController {
     this.authService.addUser(query);
     return { success: true };
   }
- 
+
   @Get('/')
   getUsers() {
     return this.authService.getUsers();

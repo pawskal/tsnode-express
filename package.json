@@ -55,6 +55,7 @@
     "dotenv": "^7.0.0",
     "express": "^4.16.3",
     "nodejs-lite-logger": "0.0.13",
+    "redis": "^2.8.0",
     "reflect-metadata": "^0.1.13",
     "ts-http-errors": "^1.0.0",
     "ts-node": "^5.0.1",

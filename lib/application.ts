@@ -4,11 +4,21 @@ import bodyParser from 'body-parser';
 import { NotFoundError, InternalServerError, ExtendedError, UnauthorizedError } from 'ts-http-errors';
 import { success, warning, error, info } from 'nodejs-lite-logger';
 import Injector from './injector';
-import { IController, Type, IAuthProvider, IResponse, IRoutes, IProviderDefinition, IRequest } from './interfaces';
+import {
+    IController,
+    Type,
+    IAuthProvider,
+    IResponse,
+    IRoutes,
+    IProviderDefinition,
+    IRequest,
+    IPlugin,
+} from './interfaces';
 import { AuthOptions, ConfigProvider, RequestArguments, AuthTarget } from './helpers';
-import { type } from 'os';
 
 class Application {
+
+  protected httpDisabled: boolean = false;
 
   public get Injector(): Injector {
     return this._injector;
@@ -22,8 +32,6 @@ class Application {
 
   protected router: any;
 
-  protected authorizationProvider : IProviderDefinition<IAuthProvider>;
-
   protected enableAthorization: boolean = false;
 
   protected authorizationOptions: AuthOptions;
@@ -35,6 +43,12 @@ class Application {
   protected pendingInjections: Map<string, Promise<any>> = new Map<string, Promise<any>>()
 
   public use: IRouterHandler<Application> & IRouterMatcher<Application>;
+
+  protected authorizationProvider?: IProviderDefinition<IAuthProvider>;
+
+  protected autoInjections: string[] = [];
+
+  protected plugins: string[] = [];
 
   constructor(cb?: Function) {
     this.express = express();
@@ -187,15 +201,36 @@ class Application {
         }));
   }
 
+  public autoResolve<T>(target: Type<T>): Application {
+      this.autoInjections.push(target.name);
+      this._injector.set(target);
+      return this;
+  }
+
+
+  public usePlugin(plugin: any): Application {
+      this.plugins.push(plugin.name);
+      this._injector.set(plugin);
+      return this;
+  }
+
   public inject<T>(name: string, cb: Function): Application;
   public inject<T>(instance: T): Application;
   public inject(): Application {
     arguments.length == 1 && this._injector.setInstance(arguments[0]);
-    arguments.length == 2 && this.pendingInjections.set(arguments[0], arguments[1] ? arguments[1]() : Promise.resolve());
+    arguments.length == 2 && this.pendingInjections.set(arguments[0], arguments[1] ? arguments[1](this.configProvider) : Promise.resolve());
+    return this;
+  }
+
+  public disableHttp() {
+    this.httpDisabled = true;
     return this;
   }
 
   public async start(cb: Function) : Promise<void> {
+
+    await this.pendingInjections.get('ConfigProvider')
+    this._injector.setInstance(this.configProvider);
 
     await Promise.all([...this.pendingInjections.entries()]
       .filter(([key]) => key !== 'ConfigProvider')
@@ -204,13 +239,25 @@ class Application {
         return this._injector.setInstance(key, injection)
       }));
 
-    await this.pendingInjections.get('ConfigProvider')
-    this._injector.setInstance(this.configProvider);
+    this.autoInjections.forEach((inj: string)=> this._injector.resolve(inj));
+
+    this.plugins.forEach((inj: string)=> {
+        this._injector.resolve(inj);
+        if(!this._injector.getPlugin(inj)){
+            this._injector.plugins.set(inj, {});
+        }
+
+    });
+
 
     if(this.authorizationProvider) {
       this.authorizationProvider.instance = this._injector.resolve<IAuthProvider>(this.authorizationProvider.name);
     }
-    this.controllers.forEach(this.buildController.bind(this));
+
+    if(!this.httpDisabled){
+      this.controllers.forEach(this.buildController.bind(this));
+    }
+
     this.use(this.handleNotFound.bind(this));
     this.use(this.handleError.bind(this));
     cb(this.express, this.configProvider);

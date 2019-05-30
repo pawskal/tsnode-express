@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { Type, IController, IRoutes, IAuthOption, IAuthRole } from './interfaces';
+import {Type, IController, IRoutes, IAuthOption, IAuthRole } from './interfaces';
 
 export default class Injector {
   public static getInstance(): Injector {
@@ -13,6 +13,8 @@ export default class Injector {
   private instances: Map<string, any> = new Map<string, any>();
 
   public controllers: Map<string, IController> = new Map<string, IController>();
+
+  public plugins: Map<string, any> = new Map<string, any>();
 
   private constructor() {
     return Injector._instance || (Injector._instance = this);
@@ -107,5 +109,9 @@ export default class Injector {
     } else {
       return defaultPath;
     }
+  }
+
+  public getPlugin(name: string): any {
+      return this.plugins.get(name);
   }
 }
