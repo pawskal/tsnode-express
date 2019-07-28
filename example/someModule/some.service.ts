@@ -1,8 +1,7 @@
-import { Service } from "tsnode-express";
-import { ConfigProvider } from "tsnode-express";
 import { InjectedService, IInjectedService } from "../external.service";
+import { Injectable, ConfigProvider } from "../../lib";
 
-@Service()
+@Injectable()
 export class SomeService {
     constructor(
         public configProvider: ConfigProvider,

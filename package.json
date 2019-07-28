@@ -59,7 +59,8 @@
     "reflect-metadata": "^0.1.13",
     "ts-http-errors": "^1.0.0",
     "ts-node": "^5.0.1",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.3.3333",
+    "uuidv4": "^4.0.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^7.2.7",
@@ -67,6 +68,7 @@
     "@types/request": "^2.47.0",
     "@types/request-promise-native": "^1.0.14",
     "@types/tape": "^4.2.32",
+    "@types/uuidv4": "^2.0.0",
     "cors": "^2.8.5",
     "jsonwebtoken": "^8.2.1",
     "nodemon": "^1.17.1",

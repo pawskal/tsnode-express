@@ -1,4 +1,4 @@
-import { Service, ConfigProvider } from "tsnode-express";
+import { Injectable, ConfigProvider } from "../../lib";
 
 class User {
   constructor(public name, public password, public role) { }
@@ -11,7 +11,7 @@ const users = [
   { name: 'Jane Doe', role: 'admin', password: 'qwerty8' },
 ]
 
-@Service()
+@Injectable()
 export class AuthService {
   private users: Array<User> = users.map(({name, role, password}) => new User(name, password, role));
   constructor(public config: ConfigProvider) { }

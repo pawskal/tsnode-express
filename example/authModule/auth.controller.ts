@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken';
 
 import { AuthService } from "./auth.service";
-import { Controller, Authorization, IRequestArguments, Get, Post, ConfigProvider } from "tsnode-express";
-@Authorization({ roles: ['admin', 'super'] })
+import { Authorization, Controller, Post, Get } from '../httpPlugin';
+import { ConfigProvider } from '../../lib';
+import { IRequestArguments } from '../httpPlugin/interfaces';
+// @Authorization({ roles: ['admin', 'super'] })
 @Controller('auth')
 export class AuthController {
   constructor(public authService: AuthService, public config: ConfigProvider) {}

@@ -1,18 +1,29 @@
-import { Controller, Get, Before, After, Post, IRequest, IResponse } from "tsnode-express";
-import { IRequestArguments } from 'tsnode-express';
+import { Injectable } from "../../lib";
+import { Controller, Get, Before, After, Post } from '../httpPlugin/decorators';
 
-import { SomeService } from './some.service';
+// import { SomeService } from './some.service';
 import { BadRequestError } from "ts-http-errors";
-import {TestDecorator} from "../simplePlugin";
+import uuidv4 from 'uuidv4';
+import { IController, IRequestArguments, IRequest, IResponse } from "../httpPlugin/interfaces";
+import { ResolveTypes } from "../../lib/interfaces";
+import { SomeService } from ".";
+// import {TestDecorator} from "../simplePlugin";
 
 @Controller('some')
-export class SomeController {
-    constructor(public someService: SomeService) {}
+@Injectable(ResolveTypes.SCOPED)
+export class SomeController implements IController {
+    req?: import("express").Request;
+    res?: import("express").Response;
+    next: Function;
+    id: string;
+    constructor(public someService: SomeService) {
+        this.id = uuidv4()
+    }
 
-    @TestDecorator()
+    // @TestDecorator()
     @Get('/')
     getSuccess(args: IRequestArguments) {
-        return { data: "success" }
+        return { data: "success", controllerId: this.id }
     }
 
     @Get('/service')
@@ -34,7 +45,7 @@ export class SomeController {
         req.body.before = 'before hook'
     }
 
-    @TestDecorator()
+    // @TestDecorator()
     @Get('/hooks')
     withHooks(args: IRequestArguments) {
         return {
